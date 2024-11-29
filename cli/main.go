@@ -110,7 +110,7 @@ func getFlags() []cli.Flag {
 
 // run application with curent context
 func runApp(cCtx *cli.Context) error {
-	setupLogging(cCtx.String("loglevel"), logFormatter)
+	setupLogging(cCtx.String("log-level"), logFormatter)
 
 	args := cCtx.Args()
 
@@ -141,7 +141,7 @@ func runApp(cCtx *cli.Context) error {
 
 	// setup bercon params
 	conn.SetDeadlineTimeout(cCtx.Int("timeout"))
-	buffersize := cCtx.Int("buffersize")
+	buffersize := cCtx.Int("buffer-size")
 	if buffersize < 1024 {
 		log.Warnf("Buffer sizes less than 1024 may be unstable")
 	}

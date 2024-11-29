@@ -28,14 +28,14 @@ jobs:
           go-version: '1.23'
 
       - name: Install dependencies
-        run: bash scripts/dependencies.sh
+        run: bash ./tools/dependencies.sh
 
       - name: Build
-        run: bash scripts/build.sh
+        run: bash ./tools/build.sh
 
       - name: Extract changelog
         id: changelog
-        run: bash scripts/release_notes.sh > release.md
+        run: bash ./tools/release_notes.sh > release.md
 
       - name: Create GitHub release
         uses: ncipollo/release-action@v1

@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Run base workflow
-        uses: ./.github/workflows/base.yml
+        uses: ./.github/actions/base
         with:
           go-version: '1.23'
 

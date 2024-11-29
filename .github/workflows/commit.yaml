@@ -1,4 +1,4 @@
-name: Lint
+name: Commit
 
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name:  Run base workflow
-        uses: ./.github/workflows/base.yml
+      - name: Run base workflow
+        uses: ./.github/actions/base
         with:
           go-version: '1.23'

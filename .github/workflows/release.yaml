@@ -19,6 +19,9 @@ jobs:
       WORK_DIR: cli
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Run base workflow
         uses: ./.github/actions/base
         with:

@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning][].
 
 * First public release
 
-[0.1.0]: https://github.com/WoozyMasta/bercon-go/releases/tag/0.1.0
+[0.1.0]: https://github.com/WoozyMasta/bercon-go/releases/tag/v0.1.0
 
 <!--links-->
 [Keep a Changelog]: https://keepachangelog.com/en/1.1.0/

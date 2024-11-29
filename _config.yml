@@ -7,8 +7,8 @@ title: ./bercon
 description: BattlEye RCON CLI
 markdown: GFM
 github:
-  zip_url: https://github.com/WoozyMasta/bercon-go/zipball/master
-  tar_url: https://github.com/WoozyMasta/bercon-go/tarball/master
-  linux: https://github.com/WoozyMasta/bercon-go/releases/latest/download/bercon-cli-linux-amd64
-  darwin: https://github.com/WoozyMasta/bercon-go/releases/latest/download/bercon-cli-darwin-arm64
-  windows: https://github.com/WoozyMasta/bercon-go/releases/latest/download/bercon-cli-windows-amd64.exe
+  zip_url: https://github.com/WoozyMasta/bercon-cli/zipball/master
+  tar_url: https://github.com/WoozyMasta/bercon-cli/tarball/master
+  linux: https://github.com/WoozyMasta/bercon-cli/releases/latest/download/bercon-cli-linux-amd64
+  darwin: https://github.com/WoozyMasta/bercon-cli/releases/latest/download/bercon-cli-darwin-arm64
+  windows: https://github.com/WoozyMasta/bercon-cli/releases/latest/download/bercon-cli-windows-amd64.exe

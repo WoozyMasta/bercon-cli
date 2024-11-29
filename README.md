@@ -167,6 +167,20 @@ dayz-all-restart
 dayz-all-restart 360
 ```
 
+## Support me 💖
+
+If you enjoy my projects and want to support further development,
+feel free to donate! Every contribution helps to keep the work going.
+Thank you!
+
+### Crypto Donations
+
+* **BTC**: `1Jb6vZAMVLQ9wwkyZfx2XgL5cjPfJ8UU3c`
+* **USDT (TRC20)**: `TN99xawQTZKraRyvPAwMT4UfoS57hdH8Kz`
+* **TON**: `UQBB5D7cL5EW3rHM_44rur9RDMz_fvg222R4dFiCAzBO_ptH`
+
+Your support is greatly appreciated!
+
 <!-- Links -->
 [logo]: assets/bercon.png
 [BattlEye]: https://www.battleye.com/ "BattlEye – The Anti-Cheat Gold Standard"

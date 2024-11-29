@@ -1,0 +1,4 @@
+build/
+dev.env
+*.mmdb
+*.psd

@@ -1,0 +1,43 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build and Release Binaries
+    runs-on: ubuntu-latest
+
+    env:
+      BIN_NAME: bercon-cli
+      UPX_VERSION: 4.2.4
+      WORK_DIR: cli
+
+    steps:
+      - name: Run base workflow
+        uses: ./.github/workflows/base.yml
+        with:
+          go-version: '1.23'
+
+      - name: Install dependencies
+        run: bash scripts/dependencies.sh
+
+      - name: Build
+        run: bash scripts/build.sh
+
+      - name: Extract changelog
+        id: changelog
+        run: bash scripts/release_notes.sh > release.md
+
+      - name: Create GitHub release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          bodyFile: release.md
+          artifacts: ./build/*

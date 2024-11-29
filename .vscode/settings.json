@@ -1,0 +1,20 @@
+{
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": [
+    "--fast"
+  ],
+  "go.testEnvFile": "${workspaceFolder}/dev.env",
+  "cSpell.words": [
+    "buffersize", "loglevel",
+    "rcon", "bercon", "beparser", "BattlEye",
+    "mmdb", "sirupsen", "urfave", "logrus", "woozymasta",
+    "GOOS", "GOARCH", "GOFLAGS", "GOARCH",
+    "lzma", "ldflags", "buildvcs", "trimpath",
+    "Tracef", "Traceln", "Debugf", "Debugln",
+    "Infof", "Infoln", "Warnf", "Warnln",
+    "Errorf", "Errorln", "Fatalf", "Fatalln"
+  ],
+  "cSpell.ignorePaths": [
+    "go.mod", "go.sum"
+  ]
+}

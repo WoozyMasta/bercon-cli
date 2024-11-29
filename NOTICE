@@ -1,0 +1,5 @@
+This project makes use of third-party software licensed under the Apache License, Version 2.0.
+A copy of the Apache License, Version 2.0, is included in the LICENSE-THIRD-PARTY file.
+
+Specific projects included:
+- geoip2-golang (https://github.com/oschwald/geoip2-golang) licensed under Apache 2.0.

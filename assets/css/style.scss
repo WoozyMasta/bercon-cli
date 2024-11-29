@@ -1,0 +1,35 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+body {
+  background: linear-gradient(#20201a, #24201d);
+}
+
+section {
+  max-width: 100%;
+}
+
+.wrapper {
+  max-width: 900px;
+}
+
+#header nav {
+  max-width: 900px;
+}
+
+#header nav ul li a {
+  color: white;
+  border: 1px solid #91700b;
+  background: linear-gradient(#bdbb20, #9e7410);
+  background-color: #bdac20;
+  line-height: 8px;
+  font-weight: bold;
+}
+
+#header nav ul li a:hover {
+  background: linear-gradient(#91773a, #7f580e);
+  background-color: #9b852f;
+  border: 1px solid #9b9351;
+}

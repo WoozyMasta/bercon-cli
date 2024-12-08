@@ -11,3 +11,5 @@ curl -#Lo upx.tar.xz \
 tar -xvf upx.tar.xz --strip-components=1 "upx-$UPX_VERSION-amd64_linux/upx"
 chmod +x upx
 sudo mv upx /usr/local/bin/
+
+go install github.com/tc-hib/go-winres@latest

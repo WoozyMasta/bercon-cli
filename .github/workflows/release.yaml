@@ -35,7 +35,7 @@ jobs:
 
       - name: Extract changelog
         id: changelog
-        run: bash ./tools/release_notes.sh > release.md
+        run: awk -f ./tools/release_notes.awk ./CHANGELOG.md > release.md
 
       - name: Create GitHub release
         uses: ncipollo/release-action@v1

@@ -18,7 +18,8 @@ build() {
     go build -ldflags="-s -w -X '$version' -X '$commit' -X '$date'" \
       -o "./build/$bin" "$WORK_DIR"/*.go
 
-  [[ $GOOS == "darwin" || ($GOOS == "windows" && $GOARCH =~ "arm") ]] && return
+  [ "$GOOS" = "windows" ] && GOARCH="$GOARCH" go-winres patch --no-backup "./build/$bin"
+  [ "$GOOS" = "darwin" ] || [ "$GOOS" = "windows" ] && return
 
   if command -v xz &>/dev/null; then
     upx --lzma --best "./build/$bin"

@@ -13,22 +13,22 @@ type Bans struct {
 
 // GUIDBan represents a GUID ban entry.
 type BanGUID struct {
-	ID          int    `json:"id"`
 	GUID        string `json:"guid"`
-	MinutesLeft int    `json:"minutes"`
 	Reason      string `json:"reason"`
+	ID          int    `json:"id"`
+	MinutesLeft int    `json:"minutes"`
 	Valid       bool   `json:"valid"`
 }
 type BansGUID []BanGUID
 
 // IPBan represents an IP ban entry.
 type BanIP struct {
-	ID          int    `json:"id"`
 	IP          string `json:"ip"`
-	MinutesLeft int    `json:"minutes"`
 	Reason      string `json:"reason"`
-	Valid       bool   `json:"valid"`
 	Country     string `json:"country,omitempty"`
+	ID          int    `json:"id"`
+	MinutesLeft int    `json:"minutes"`
+	Valid       bool   `json:"valid"`
 }
 type BansIP []BanIP
 

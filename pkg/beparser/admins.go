@@ -7,10 +7,10 @@ import (
 
 // Admin represents a connected RCon admin.
 type Admin struct {
-	ID      byte   `json:"id"`
 	IP      string `json:"ip"`
-	Port    uint16 `json:"port"`
 	Country string `json:"country,omitempty"`
+	Port    uint16 `json:"port"`
+	ID      byte   `json:"id"`
 }
 type Admins []Admin
 

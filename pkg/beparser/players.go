@@ -7,15 +7,15 @@ import (
 
 // Player represents a single player.
 type Player struct {
-	ID      byte   `json:"id"`
 	IP      string `json:"ip"`
+	GUID    string `json:"guid"`
+	Name    string `json:"name"`
+	Country string `json:"country,omitempty"`
 	Port    uint16 `json:"port"`
 	Ping    uint16 `json:"ping"`
-	GUID    string `json:"guid"`
+	ID      byte   `json:"id"`
 	Valid   bool   `json:"valid"`
-	Name    string `json:"name"`
 	Lobby   bool   `json:"lobby"`
-	Country string `json:"country,omitempty"`
 }
 type Players []Player
 

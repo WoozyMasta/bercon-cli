@@ -26,25 +26,25 @@ type Timeouts struct {
 
 // represents a single response from the server, potentially a part of a multipart response
 type Response struct {
+	timestamp time.Time // timestamp of when this response was received
 	data      []byte    // data received in the response
 	pages     byte      // total number of pages in the response (for multipart responses)
 	page      byte      // current page number of this response segment
-	timestamp time.Time // timestamp of when this response was received
 }
 
 // represents a connection to the BattlEye server
 type Connection struct {
+	buffer     [256]*Response // buffer for storing responses indexed by sequence number
 	conn       *net.UDPConn   // UDP connection to the server
+	done       chan struct{}  // channel to signal the closure of keepalive and listener routines
 	address    string         // server address in the form "IP:Port"
 	password   string         // password for authenticating with the server
-	sequence   byte           // current packet sequence number
-	bufferSize int            // size of the buffer for receiving packets
 	timeouts   Timeouts       // timeout configurations for this connection
-	buffer     [256]*Response // buffer for storing responses indexed by sequence number
+	bufferSize int            // size of the buffer for receiving packets
 	bufferMu   sync.Mutex     // mutex for synchronizing access to the response buffer
 	connMu     sync.Mutex     // mutex for synchronizing access to the UDP connection
-	done       chan struct{}  // channel to signal the closure of keepalive and listener routines
 	alive      uint32         // atomic flag indicating if the connection is active (1) or closed (0)
+	sequence   byte           // current packet sequence number
 }
 
 // initializes a new connection to the specified BattlEye server using the provided address and password

@@ -39,12 +39,12 @@ BattleEye RCON packet
   - header | 0x02 | 0x44 ... -> message (type | seq, data (msg))
 */
 type packet struct {
+	data   []byte     // data
 	header header     // use in all packets
 	kind   packetKind // define type of packet
 	seq    byte       // packet sequence number for command and message packet only
 	pages  byte       // pages count for command packet only
 	page   byte       // page number for command packet only
-	data   []byte     // data
 }
 
 // make packet

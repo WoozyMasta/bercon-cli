@@ -1,14 +1,13 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 
-	"github.com/woozymasta/bercon-cli/pkg/beparser"
+	"github.com/woozymasta/bercon-cli/pkg/beprinter"
 	"github.com/woozymasta/bercon-cli/pkg/bercon"
 	"github.com/woozymasta/bercon-cli/pkg/config"
 )
@@ -77,6 +76,12 @@ func getFlags() []cli.Flag {
 			Usage:   "print result in JSON format",
 			Aliases: []string{"j"},
 			EnvVars: []string{"BERCON_JSON_OUTPUT"},
+		},
+		&cli.StringFlag{
+			Name:    "geo-db",
+			Usage:   "path to Country GeoDB mmdb file",
+			Aliases: []string{"g"},
+			EnvVars: []string{"BERCON_GEO_DB"},
 		},
 		&cli.IntFlag{
 			Name:    "timeout",
@@ -149,47 +154,14 @@ func runApp(cCtx *cli.Context) error {
 
 	// execute command
 	for i, cmd := range args.Slice() {
-		if err := executeCommand(conn, cmd, i, cCtx.Bool("json")); err != nil {
-			return err
+		data, err := conn.Send(cmd)
+		if err != nil {
+			return fmt.Errorf("error in command %d '%s': %v", i, cmd, err)
 		}
+
+		beprinter.ParseAndPrintData(data, cmd, cCtx.String("geo-db"), cCtx.Bool("json"))
 	}
 
-	return nil
-}
-
-// execute command on server and print response
-func executeCommand(conn *bercon.Connection, cmd string, index int, printJSON bool) error {
-	data, err := conn.Send(cmd)
-	if err != nil {
-		return fmt.Errorf("error in command %d '%s': %v", index, cmd, err)
-	}
-
-	if printJSON {
-		return printJSONResponse(data, cmd)
-	}
-
-	printResponse(data)
-	return nil
-}
-
-// print plain text response
-func printResponse(data []byte) {
-	if len(data) == 0 {
-		fmt.Println("OK")
-		return
-	}
-
-	fmt.Println(string(data))
-}
-
-// parse and print data as json
-func printJSONResponse(data []byte, cmd string) error {
-	jsonData, err := json.MarshalIndent(beparser.Parse(data, cmd), "", "  ")
-	if err != nil {
-		return fmt.Errorf("error converting data to JSON: %v", err)
-	}
-
-	fmt.Println(string(jsonData))
 	return nil
 }
 

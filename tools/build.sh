@@ -19,6 +19,9 @@ build() {
       -o "./build/$bin" "$WORK_DIR"/*.go
 
   [ "$GOOS" = "windows" ] && GOARCH="$GOARCH" go-winres patch --no-backup "./build/$bin"
+
+  cyclonedx-gomod bin -json -output "./build/$bin.sbom.json" "./build/$bin"
+
   [ "$GOOS" = "darwin" ] || [ "$GOOS" = "windows" ] && return
 
   if command -v xz &>/dev/null; then
@@ -44,3 +47,6 @@ build linux arm64
 build windows 386
 build windows amd64
 build windows arm64
+
+cyclonedx-gomod app -json -packages -files -licenses \
+  -output "./build/$BIN_NAME.sbom.json" -main cli/

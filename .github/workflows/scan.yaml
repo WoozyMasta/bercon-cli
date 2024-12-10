@@ -18,3 +18,5 @@ jobs:
           vt_api_key: ${{ secrets.VT_API_KEY }}
           rate_limit: 4
           update_release: true
+          file_globs: |
+            !*.json

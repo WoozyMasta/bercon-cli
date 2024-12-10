@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning][].
 ### Removed
 -->
 
-## [0.1.2][] - 2024-12-10
+## [0.2.0][] - 2024-12-11
 
 ### Added
 
@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning][].
 * Aligned fields for all go structures
 * Update dependencies
 
-[0.1.2]: https://github.com/WoozyMasta/bercon-go/releases/tag/v0.1.2
+[0.2.0]: https://github.com/WoozyMasta/bercon-go/releases/tag/v0.2.0
 
 ## [0.1.1][] - 2024-12-08
 

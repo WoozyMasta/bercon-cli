@@ -18,4 +18,8 @@ jobs:
           vt_api_key: ${{ secrets.VT_API_KEY }}
           rate_limit: 4
           update_release: true
-          file_globs: bercon-cli-[!.]*
+          file_globs: |
+            bercon-cli-linux-*
+            **/bercon-cli-darwin-*
+            **/bercon-cli-linux-*
+            **/bercon-cli-windows-*.exe

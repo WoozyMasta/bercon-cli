@@ -5,6 +5,7 @@
   ],
   "go.testEnvFile": "${workspaceFolder}/dev.env",
   "cSpell.words": [
+    "Arma",
     "BattlEye",
     "beparser",
     "beprinter",
@@ -12,6 +13,7 @@
     "buffersize",
     "buildvcs",
     "cyclonedx",
+    "dayz",
     "Debugf",
     "Debugln",
     "Errorf",

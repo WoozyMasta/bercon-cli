@@ -100,7 +100,7 @@ func getFlags() []cli.Flag {
 		&cli.StringFlag{
 			Name:    "log-level",
 			Value:   "error",
-			Usage:   "log level (trace, debug, info, warn, error)",
+			Usage:   "log level",
 			Aliases: []string{"l"},
 			EnvVars: []string{"BERCON_LOG_LEVEL"},
 		},

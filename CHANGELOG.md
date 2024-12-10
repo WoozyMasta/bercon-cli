@@ -13,6 +13,26 @@ and this project adheres to [Semantic Versioning][].
 ### Removed
 -->
 
+## [0.1.2][] - 2024-12-10
+
+### Added
+
+* Output of short country code based on GeoIP data in plain or JSON
+  response format if path to `mmdb` GeoIP city database is specified
+  in `--geo-db` flag, `-g` or `BERCON_GEO_DB` variable
+* `ParseWithGeo` and `ParseWithGeoDB` functions in **beparser** for simple
+  use with geo data
+* **beprinter** package for simple response data printing
+* Bill of materials for cli and binaries
+* CI stage to check the alignment of go structure fields
+
+### Changed
+
+* Aligned fields for all go structures
+* Update dependencies
+
+[0.1.2]: https://github.com/WoozyMasta/bercon-go/releases/tag/v0.1.2
+
 ## [0.1.1][] - 2024-12-08
 
 ### Added

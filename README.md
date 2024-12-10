@@ -60,10 +60,11 @@ OPTIONS:
    --port value, -p value         server RCON port (default: 2305) [$BERCON_PORT]
    --password value, -P value     server RCON password [$BERCON_PASSWORD]
    --json, -j                     print result in JSON format (default: false) [$BERCON_JSON_OUTPUT]
+   --geo-db value, -g value       path to Country GeoDB mmdb file [$BERCON_GEO_DB]
    --timeout value, -t value      deadline and timeout in seconds (default: 5) [$BERCON_TIMEOUT]
    --buffer-size value, -b value  buffer size for RCON connection (default: 1024) [$BERCON_BUFFER_SIZE]
-   --log-level value, -l value    log level (trace, debug, info, warn, error) (default: "error") [$BERCON_LOG_LEVEL]
-   --version, -v                  print version (default: false)
+   --log-level value, -l value    log level (default: "error") [$BERCON_LOG_LEVEL]
+   --version, -v                  print version
    --help, -h                     show help
 ```
 
@@ -104,6 +105,65 @@ You can use json output for further processing
 ```bash
 bercon-cli -p 2306 -P myPass -j players | jq -er .
 ```
+
+## Geo IP
+
+If you specify the path to the GeoIP city database in `mmdb` format,
+the `Country` column with the short country code or the `country` key
+in json format will be added to the output.  
+GeoIP processing supported for **Players**, **IP Bans** and **Admins**.
+
+```bash
+# pass as flag
+bercon-cli -p 2306 -P myPass -g /path/to/GeoLite2-Country.mmdb players
+# or as variable
+BERCON_GEO_DB=/pat/to/GeoLite2-Country.mmdb BERCON_PASSWORD='myPass' bercon-cli -p 2306 players
+```
+
+> [!TIP]  
+> An empty value in `--geo-db`, `-g` or `BERCON_GEO_DB`
+> will disable geoip processing.
+
+Below are examples of responses:
+
+```txt
+Players on server:
+[#]  [IP Address]:[Port]    [Ping]  [GUID]                            [Name]                  [Country]
+---------------------------------------------------------------------------------------------------------
+0    175.78.137.224:46534   33      20501A3C348F41D8B7AC3F4D1BB2B11C  Avtonom Fedenko         CN       
+1    162.47.104.77:45539    298     A3333BB4AFBC64F07F1FA0C6C09E6746  Svitlogor Zelinka       US       
+2    99.245.38.37:31924     156     8DA159D526C95D590303BF5DE422D044  Budislav Dovgalyuk      CA       
+3    181.238.97.213:37703   285     DA55E95D18536F77A14C0EC70562CB20  Sergiy Filevich         AR       
+4    213.242.6.7:29653      274     090B1EAD1075519FC30942580067EB48  Vernislav Moyseienko    RU       
+5    14.186.90.206:48687    16      2E1589F4CF2E3EF553A4DA9F6C2ADB4C  Radimir Sosnovskiy      VN       
+6    241.66.187.25:40056    198     D5D648188992BB7B4994451E70F71558  Sobislav Peleshchishin  XX       
+7    5.252.240.44:48936     227     256D87ED2B7D0ADB664B372C297E1B4D  Virodan Bogovin         IT       
+8    172.148.115.119:32793  141     799B37118AC27D5C345092069DAFE8B2  Gostomisl Yaskevich     GB       
+9    39.127.252.69:44989    106     CFBAC3F0F22C492FA238D9ED159F3E6C  Vodogray Zhigalko       KR       
+10   125.202.166.119:31839  277     ADD6FEB25F352F0F6C01F0731E49EF43  Toligniv Doshchenko     JP       
+(11 players in total)
+PASS
+```
+
+```json
+[
+  {
+    "ip": "175.78.137.224",
+    "guid": "20501A3C348F41D8B7AC3F4D1BB2B11C",
+    "name": "Avtonom Fedenko",
+    "country": "CN",
+    "port": 46534,
+    "ping": 33,
+    "id": 0,
+    "valid": true,
+    "lobby": false
+  }
+]
+```
+
+> [!TIP]  
+> `XX` country code is used for local addresses and other cases when it
+> was not possible to get data from the GeoIP DB
 
 ## More useful bash examples
 
@@ -175,9 +235,11 @@ Thank you!
 
 ### Crypto Donations
 
+<!-- cSpell:disable -->
 * **BTC**: `1Jb6vZAMVLQ9wwkyZfx2XgL5cjPfJ8UU3c`
 * **USDT (TRC20)**: `TN99xawQTZKraRyvPAwMT4UfoS57hdH8Kz`
 * **TON**: `UQBB5D7cL5EW3rHM_44rur9RDMz_fvg222R4dFiCAzBO_ptH`
+<!-- cSpell:enable -->
 
 Your support is greatly appreciated!
 

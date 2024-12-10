@@ -7,9 +7,11 @@
   "cSpell.words": [
     "BattlEye",
     "beparser",
+    "beprinter",
     "bercon",
     "buffersize",
     "buildvcs",
+    "cyclonedx",
     "Debugf",
     "Debugln",
     "Errorf",
@@ -19,6 +21,7 @@
     "geoip",
     "GOARCH",
     "GOFLAGS",
+    "gomod",
     "GOOS",
     "Infof",
     "Infoln",
@@ -27,6 +30,7 @@
     "logrus",
     "lzma",
     "mmdb",
+    "oschwald",
     "rcon",
     "sirupsen",
     "Tracef",
@@ -35,9 +39,10 @@
     "urfave",
     "Warnf",
     "Warnln",
+    "winres",
     "woozymasta"
   ],
   "cSpell.ignorePaths": [
-    "go.mod", "go.sum"
+    "go.mod", "go.sum", ".github/actions/**/*.yaml", ".github/workflows/**/*.yaml", ".vscode/*"
   ]
 }

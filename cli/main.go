@@ -113,7 +113,7 @@ func getFlags() []cli.Flag {
 	}
 }
 
-// run application with curent context
+// run application with current context
 func runApp(cCtx *cli.Context) error {
 	setupLogging(cCtx.String("log-level"), logFormatter)
 

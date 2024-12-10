@@ -19,5 +19,5 @@ jobs:
           rate_limit: 4
           update_release: true
           file_globs: |
-            !*.json
             bercon-cli-*
+            !*.sbom.json

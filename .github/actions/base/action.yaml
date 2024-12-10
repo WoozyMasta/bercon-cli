@@ -26,3 +26,8 @@ runs:
       uses: golangci/golangci-lint-action@v6
       with:
         version: v1.60
+
+    - name: Check Golang structures
+      uses: essentialkaos/aligo-action@v2
+      with:
+        files: ./...

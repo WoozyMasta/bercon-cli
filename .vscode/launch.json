@@ -8,6 +8,7 @@
       "mode": "debug",
       "program": "${relativeFileDirname}/",
       "envFile": "${workspaceFolder}/dev.env",
+      "args": ["bans", "players"]
     }
   ]
 }

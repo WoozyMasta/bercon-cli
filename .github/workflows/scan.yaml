@@ -20,3 +20,4 @@ jobs:
           update_release: true
           file_globs: |
             !*.json
+            bercon-cli-*

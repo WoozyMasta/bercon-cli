@@ -46,5 +46,24 @@
       </section>
 
     </div>
+
+    <script>
+      function processAdmonitionBlocks() {
+        const blocks = document.querySelectorAll('blockquote');
+
+        blocks.forEach(block => {
+          let text = block.innerHTML;
+          text = text.replace(/\[\!(TIP|NOTE|IMPORTANT|WARNING|CAUTION)\]/g, (match, p1) => {
+            const formattedText = `<strong>${p1.charAt(0).toUpperCase() + p1.slice(1)}</strong>`;
+            block.classList.add(`admonition-${p1.toLowerCase()}`);
+            return formattedText;
+          });
+
+          block.innerHTML = text;
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', processAdmonitionBlocks);
+    </script>
   </body>
 </html>

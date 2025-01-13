@@ -39,7 +39,6 @@ func Parse(data []byte, cmd string) any {
 
 // Return struct by passed command like Parse with country from IP fields by geoip2.Reader
 func ParseWithGeo(data []byte, cmd string, geoReader *geoip2.Reader) (any, error) {
-
 	// fallback if geo reader is nil
 	if geoReader == (*geoip2.Reader)(nil) {
 		return Parse(data, cmd), fmt.Errorf("")

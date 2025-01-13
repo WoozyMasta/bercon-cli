@@ -12,6 +12,8 @@ type Admin struct {
 	Port    uint16 `json:"port"`
 	ID      byte   `json:"id"`
 }
+
+// Admins represents a []Admin list.
 type Admins []Admin
 
 const (
@@ -23,6 +25,7 @@ const (
 	adminsStartString = "Connected RCon admins:"
 )
 
+// Create new Admins
 func NewAdmins() *Admins {
 	return &Admins{}
 }

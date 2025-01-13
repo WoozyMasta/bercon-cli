@@ -7,10 +7,12 @@ type Messages struct {
 	Msg []string `json:"msg"`
 }
 
+// Create new Messages struct
 func NewMessage() *Messages {
 	return &Messages{}
 }
 
+// Split other not parsable response to lines in Messages struct
 func (m *Messages) Parse(data []byte) {
 	lines := strings.Split(string(data), "\n")
 

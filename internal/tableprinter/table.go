@@ -3,8 +3,6 @@ package tableprinter
 import (
 	"fmt"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // print tables with column alignment
@@ -28,16 +26,19 @@ func NewTablePrinter(headers []string) *TablePrinter {
 }
 
 // insert new row to table
-func (tp *TablePrinter) AddRow(row []string) {
+func (tp *TablePrinter) AddRow(row []string) error {
 	if len(row) != len(tp.headers) {
-		log.Fatal("row length does not match headers length")
+		return fmt.Errorf("row length %d does not match headers length %d", len(row), len(tp.headers))
 	}
+
 	for i, cell := range row {
 		if len(cell) > tp.colWidths[i] {
 			tp.colWidths[i] = len(cell)
 		}
 	}
 	tp.rows = append(tp.rows, row)
+
+	return nil
 }
 
 // print table

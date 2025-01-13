@@ -14,17 +14,16 @@ func parseAddress(addr string) (string, uint16) {
 		ip = "invalid"
 	}
 
-	var port int
 	if len(address) != 2 {
 		return ip, 0
 	}
 
-	port, err := strconv.Atoi(address[1])
+	port, err := strconv.ParseUint(address[1], 10, 16)
 	if err != nil {
 		return ip, 0
 	}
 
-	return ip, uint16(port)
+	return ip, uint16(port) // #nosec G115
 }
 
 func isValidIPv4(ip string) bool {

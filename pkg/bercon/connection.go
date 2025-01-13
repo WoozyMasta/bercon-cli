@@ -169,7 +169,7 @@ func (c *Connection) StartKeepAlive() {
 				// send keepalive
 				_, err := c.Send("")
 				if err != nil {
-					c.Close()
+					_ = c.Close()
 					return
 				}
 			case <-c.done:
@@ -312,7 +312,7 @@ func (c *Connection) startListening() {
 				return
 			default:
 				if c.conn == nil || !c.IsAlive() {
-					c.Close()
+					_ = c.Close()
 					return
 				}
 
@@ -321,7 +321,7 @@ func (c *Connection) startListening() {
 					if !c.IsAlive() {
 						return
 					}
-					c.Close()
+					_ = c.Close()
 					return
 				}
 
@@ -390,7 +390,6 @@ func (c *Connection) storeResponse(pkt *packet) error {
 			page:      pkt.page,
 			timestamp: time.Now(),
 		}
-
 	} else if c.buffer[seq].pages > 0 {
 		// appending new pages
 		if c.buffer[seq].page+1 != pkt.page {
@@ -398,7 +397,6 @@ func (c *Connection) storeResponse(pkt *packet) error {
 		}
 		c.buffer[seq].data = append(c.buffer[seq].data, pkt.data...)
 		c.buffer[seq].page = pkt.page
-
 	} else {
 		return ErrBadPart
 	}

@@ -17,13 +17,15 @@ type Player struct {
 	Valid   bool   `json:"valid"`
 	Lobby   bool   `json:"lobby"`
 }
+
+// Players represents a []Player list.
 type Players []Player
 
 const (
 	playersColID = iota
 	playersColIP
 	playersColPing
-	playersColGuid
+	playersColGUID
 	playersColName
 	playersColsCount
 
@@ -36,6 +38,7 @@ const (
 	defaultPing = 0
 )
 
+// Create new Players
 func NewPlayers() *Players {
 	return &Players{}
 }
@@ -65,23 +68,27 @@ func (p *Players) Parse(data []byte) {
 			continue
 		}
 
-		id, err := strconv.Atoi(parts[playersColID])
+		id, err := strconv.ParseUint(parts[playersColID], 10, 8)
 		if err != nil {
-			id = len(*p)
+			if len(*p) > 255 {
+				id = 255
+			} else {
+				id = uint64(len(*p))
+			}
 		}
 
 		ip, port := parseAddress(parts[playersColIP])
 
-		ping, err := strconv.Atoi(parts[playersColPing])
+		ping, err := strconv.ParseUint(parts[playersColPing], 10, 16)
 		if err != nil {
 			ping = defaultPing
 		}
 
 		var guid string
 		var valid bool
-		if len(parts[playersColGuid]) >= hashBytesGUID {
-			guid = strings.TrimSpace(parts[playersColGuid][:hashBytesGUID])
-			valid = parts[playersColGuid][hashBytesGUID:] == playerOK
+		if len(parts[playersColGUID]) >= hashBytesGUID {
+			guid = strings.TrimSpace(parts[playersColGUID][:hashBytesGUID])
+			valid = parts[playersColGUID][hashBytesGUID:] == playerOK
 		} else {
 			guid = defaultInvalidGUID
 		}

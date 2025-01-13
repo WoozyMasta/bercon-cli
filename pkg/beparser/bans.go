@@ -11,7 +11,7 @@ type Bans struct {
 	IPBans   BansIP   `json:"ip_bans"`
 }
 
-// GUIDBan represents a GUID ban entry.
+// BanGUID represents a GUID ban entry.
 type BanGUID struct {
 	GUID        string `json:"guid"`
 	Reason      string `json:"reason"`
@@ -19,9 +19,11 @@ type BanGUID struct {
 	MinutesLeft int    `json:"minutes"`
 	Valid       bool   `json:"valid"`
 }
+
+// BansGUID represents a []BanGUID list.
 type BansGUID []BanGUID
 
-// IPBan represents an IP ban entry.
+// BanIP represents an IP ban entry.
 type BanIP struct {
 	IP          string `json:"ip"`
 	Reason      string `json:"reason"`
@@ -30,6 +32,8 @@ type BanIP struct {
 	MinutesLeft int    `json:"minutes"`
 	Valid       bool   `json:"valid"`
 }
+
+// BansIP represents a []BanIP list.
 type BansIP []BanIP
 
 const (
@@ -44,6 +48,7 @@ const (
 	bansIPStartString   = "IP Bans:"
 )
 
+// Create new Bans
 func NewBans() *Bans {
 	return &Bans{}
 }
@@ -72,10 +77,12 @@ func (b *Bans) Parse(data []byte) {
 	}
 }
 
+// Create new BansGUID
 func NewBansGUID() *BansGUID {
 	return &BansGUID{}
 }
 
+// Parse GUID bans data
 func (b *BansGUID) Parse(lines []string) {
 	for i := 0; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])
@@ -124,10 +131,12 @@ func (b *BansGUID) Parse(lines []string) {
 	}
 }
 
+// Create new BansIP
 func NewBansIP() *BansIP {
 	return &BansIP{}
 }
 
+// Parse IP bans data
 func (b *BansIP) Parse(lines []string, guidCount int) {
 	for i := 0; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])

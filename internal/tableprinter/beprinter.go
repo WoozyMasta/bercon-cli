@@ -4,33 +4,30 @@ import (
 	"encoding/json"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/woozymasta/bercon-cli/pkg/beparser"
 )
 
 // parse data for cmd and print as table
-func ParseAndPrintData(data []byte, cmd, geoDB string, json bool) {
+func ParseAndPrintData(data []byte, cmd, geoDB string, json bool) error {
 	// print if not geo enabled
 	if geoDB == "" {
 		if json {
-			printJSON(beparser.Parse(data, cmd))
-		} else {
-			printPlain(data)
+			return printJSON(beparser.Parse(data, cmd))
 		}
 
-		return
+		printPlain(data)
+		return nil
 	}
 
 	// parse data with geo
 	parsedData, err := beparser.ParseWithGeoDB(data, cmd, geoDB)
 	if err != nil {
-		log.Fatalf("Parse response: %v", err)
+		return fmt.Errorf("parse response: %v", err)
 	}
 
 	// print json response
 	if json {
-		printJSON(parsedData)
-		return
+		return printJSON(parsedData)
 	}
 
 	// print table response with geo
@@ -47,6 +44,8 @@ func ParseAndPrintData(data []byte, cmd, geoDB string, json bool) {
 			printPlain(data)
 		}
 	}
+
+	return nil
 }
 
 func printPlain(data []byte) {
@@ -59,11 +58,13 @@ func printPlain(data []byte) {
 }
 
 // parse and print data as json
-func printJSON(data any) {
+func printJSON(data any) error {
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
-		log.Fatal("error converting data to JSON")
+		return fmt.Errorf("error converting data to JSON: %v", err)
 	}
 
 	fmt.Println(string(jsonData))
+
+	return nil
 }

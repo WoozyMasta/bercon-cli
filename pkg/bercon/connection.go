@@ -40,7 +40,7 @@ type Connection struct {
 	address    string         // server address in the form "IP:Port"
 	password   string         // password for authenticating with the server
 	timeouts   Timeouts       // timeout configurations for this connection
-	bufferSize int            // size of the buffer for receiving packets
+	bufferSize uint16         // size of the buffer for receiving packets
 	bufferMu   sync.Mutex     // mutex for synchronizing access to the response buffer
 	connMu     sync.Mutex     // mutex for synchronizing access to the UDP connection
 	alive      uint32         // atomic flag indicating if the connection is active (1) or closed (0)
@@ -85,7 +85,7 @@ func Open(addr, pass string) (*Connection, error) {
 }
 
 // sets the buffer size for receiving packets from the server
-func (c *Connection) SetBufferSize(size int) {
+func (c *Connection) SetBufferSize(size uint16) {
 	c.bufferSize = size
 }
 
@@ -298,7 +298,7 @@ func (c *Connection) login() error {
 
 // constructs and sends a packet of the specified type and sequence to the server
 func (c *Connection) writePacket(kind packetKind, data []byte, seq byte) error {
-	if len(data) > c.bufferSize-9 { // 9 == header 7-bytes, 1-byte type, 1-byte sequence number
+	if len(data) > int(c.bufferSize-9) { // 9 == header 7-bytes, 1-byte type, 1-byte sequence number
 		return ErrBadSize
 	}
 

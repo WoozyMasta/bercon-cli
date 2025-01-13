@@ -7,9 +7,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 
-	"github.com/woozymasta/bercon-cli/pkg/beprinter"
+	"github.com/woozymasta/bercon-cli/internal/tableprinter"
+	"github.com/woozymasta/bercon-cli/internal/vars"
 	"github.com/woozymasta/bercon-cli/pkg/bercon"
-	"github.com/woozymasta/bercon-cli/pkg/config"
 )
 
 var logFormatter *log.TextFormatter
@@ -120,7 +120,7 @@ func runApp(cCtx *cli.Context) error {
 	args := cCtx.Args()
 
 	if cCtx.Bool("version") {
-		fmt.Printf("%s\n\nversion\t%s\ncommit\t%s\nbuilt\t%s\n", cCtx.App.Name, config.Version, config.Commit, config.BuildTime)
+		fmt.Printf("%s\n\nversion\t%s\ncommit\t%s\nbuilt\t%s\n", cCtx.App.Name, vars.Version, vars.Commit, vars.BuildTime)
 		os.Exit(0)
 	}
 
@@ -150,7 +150,7 @@ func runApp(cCtx *cli.Context) error {
 	if buffersize < 1024 {
 		log.Warnf("Buffer sizes less than 1024 may be unstable")
 	}
-	conn.SetBufferSize(buffersize)
+	conn.SetBufferSize(uint16(buffersize))
 
 	// execute command
 	for i, cmd := range args.Slice() {
@@ -159,7 +159,7 @@ func runApp(cCtx *cli.Context) error {
 			return fmt.Errorf("error in command %d '%s': %v", i, cmd, err)
 		}
 
-		beprinter.ParseAndPrintData(data, cmd, cCtx.String("geo-db"), cCtx.Bool("json"))
+		tableprinter.ParseAndPrintData(data, cmd, cCtx.String("geo-db"), cCtx.Bool("json"))
 	}
 
 	return nil

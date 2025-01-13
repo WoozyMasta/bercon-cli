@@ -1,4 +1,4 @@
-package beprinter
+package tableprinter
 
 import (
 	"encoding/json"

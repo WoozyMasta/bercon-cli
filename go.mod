@@ -15,3 +15,8 @@ require (
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 )
+
+replace (
+	internal/tableprinter => ./internal/tableprinter
+	internal/vars => ./internal/vars
+)

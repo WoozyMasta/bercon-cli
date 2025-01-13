@@ -3,206 +3,106 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"time"
 
-	log "github.com/sirupsen/logrus"
-	"github.com/urfave/cli/v2"
-
+	"github.com/jessevdk/go-flags"
 	"github.com/woozymasta/bercon-cli/internal/tableprinter"
 	"github.com/woozymasta/bercon-cli/internal/vars"
 	"github.com/woozymasta/bercon-cli/pkg/bercon"
 )
 
-var logFormatter *log.TextFormatter
+// CLI options
+type Options struct {
+	// server IPv4 address
+	IP string `short:"i" long:"ip" description:"Server IPv4 address" default:"127.0.0.1" env:"BERCON_ADDRESS"`
+	// server RCON port
+	Port int `short:"p" long:"port" description:"Server RCON port" default:"2305" env:"BERCON_PORT"`
+	// server RCON password
+	Password string `short:"P" long:"password" description:"Server RCON password" env:"BERCON_PASSWORD"`
+	// print result in JSON format
+	JSON bool `short:"j" long:"json" description:"Print result in JSON format" env:"BERCON_JSON_OUTPUT"`
+	// path to Country GeoDB mmdb file
+	GeoDB string `short:"g" long:"geo-db" description:"Path to Country GeoDB mmdb file" env:"BERCON_GEO_DB"`
+	// deadline and timeout in seconds
+	Timeout int `short:"t" long:"timeout" description:"Deadline and timeout in seconds" default:"3" env:"BERCON_TIMEOUT"`
+	// buffer size for RCON connection
+	Buffer uint16 `short:"b" long:"buffer-size" description:"Buffer size for RCON connection" default:"1024" env:"BERCON_BUFFER_SIZE"`
+	// server IPv4 address
+	Help bool `short:"h" long:"help" description:"Show version, commit, and build time;"`
+	// server IPv4 address
+	Version bool `short:"v" long:"version" description:"Prints this help message."`
+}
 
 func main() {
-	app := &cli.App{
-		Name:      "bercon-cli",
-		Usage:     "BattlEye RCon CLI",
-		UsageText: "bercon-cli [options] command [command, command, ...]",
-		Flags:     getFlags(),
-		Action:    runApp,
-		Writer:    os.Stderr,
-		CustomAppHelpTemplate: `NAME:
-   {{.Name}} - {{.Usage}} {{.Version}}
+	opts := &Options{}
+	p := flags.NewParser(opts, flags.PassDoubleDash|flags.PrintErrors|flags.PassAfterNonOption)
 
-USAGE:
-   {{.UsageText}}
+	p.Usage = "[OPTIONS] command [command, command, ...]"
+	p.LongDescription = "BattlEye RCon CLI."
+	p.Command.Name = filepath.Base(p.Command.Name)
 
-OPTIONS:
-   {{range .VisibleFlags}}{{.}}
-   {{end}}
-`,
-	}
-
-	logFormatter = prepareLogging()
-
-	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
-	}
-}
-
-// get flags passed in cli
-func getFlags() []cli.Flag {
-	return []cli.Flag{
-		&cli.StringFlag{
-			Name:    "ip",
-			Value:   "127.0.0.1",
-			Usage:   "server IPv4 address",
-			Aliases: []string{"i"},
-			EnvVars: []string{"BERCON_ADDRESS"},
-		},
-		&cli.IntFlag{
-			Name:    "port",
-			Value:   2305,
-			Usage:   "server RCON port",
-			Aliases: []string{"p"},
-			EnvVars: []string{"BERCON_PORT"},
-			Action: func(ctx *cli.Context, v int) error {
-				if v >= 65536 {
-					return fmt.Errorf("flag port value %v out of range [0-65535]", v)
-				}
-				return nil
-			},
-		},
-		&cli.StringFlag{
-			Name:     "password",
-			Usage:    "server RCON password",
-			Aliases:  []string{"P"},
-			EnvVars:  []string{"BERCON_PASSWORD"},
-			FilePath: ".env",
-		},
-		&cli.BoolFlag{
-			Name:    "json",
-			Usage:   "print result in JSON format",
-			Aliases: []string{"j"},
-			EnvVars: []string{"BERCON_JSON_OUTPUT"},
-		},
-		&cli.StringFlag{
-			Name:    "geo-db",
-			Usage:   "path to Country GeoDB mmdb file",
-			Aliases: []string{"g"},
-			EnvVars: []string{"BERCON_GEO_DB"},
-		},
-		&cli.IntFlag{
-			Name:    "timeout",
-			Value:   bercon.DefaultDeadlineTimeout,
-			Usage:   "deadline and timeout in seconds",
-			Aliases: []string{"t"},
-			EnvVars: []string{"BERCON_TIMEOUT"},
-		},
-		&cli.IntFlag{
-			Name:    "buffer-size",
-			Value:   bercon.DefaultBufferSize,
-			Usage:   "buffer size for RCON connection",
-			Aliases: []string{"b"},
-			EnvVars: []string{"BERCON_BUFFER_SIZE"},
-		},
-		&cli.StringFlag{
-			Name:    "log-level",
-			Value:   "error",
-			Usage:   "log level",
-			Aliases: []string{"l"},
-			EnvVars: []string{"BERCON_LOG_LEVEL"},
-		},
-		&cli.BoolFlag{
-			Name:               "version",
-			Aliases:            []string{"v"},
-			Usage:              "print version",
-			DisableDefaultText: true,
-		},
-	}
-}
-
-// run application with current context
-func runApp(cCtx *cli.Context) error {
-	setupLogging(cCtx.String("log-level"), logFormatter)
-
-	args := cCtx.Args()
-
-	if cCtx.Bool("version") {
-		fmt.Printf("%s\n\nversion\t%s\ncommit\t%s\nbuilt\t%s\n", cCtx.App.Name, vars.Version, vars.Commit, vars.BuildTime)
+	args, err := p.Parse()
+	if err != nil {
+		// fatal(err)
 		os.Exit(0)
 	}
 
-	if args.Len() == 0 {
-		_ = cli.ShowAppHelp(cCtx)
-		return fmt.Errorf("no command passed")
+	if opts.Help {
+		p.WriteHelp(os.Stdout)
+		os.Exit(0)
+	}
+	if opts.Version {
+		printVersion()
+	}
+	if len(opts.Password) == 0 {
+		fatal("required flag '-P, --password' was not specified")
+	}
+	if len(args) < 1 {
+		fatal("Command must be provided")
 	}
 
-	// connect to RCON server
-	ip := cCtx.String("ip")
-	port := cCtx.Int("port")
-	password := cCtx.String("password")
-
-	if password == "" {
-		return fmt.Errorf("no password passed")
-	}
-
-	conn, err := bercon.Open(fmt.Sprintf("%s:%d", ip, port), password)
+	addr := fmt.Sprintf("%s:%d", opts.IP, opts.Port)
+	conn, err := bercon.Open(addr, opts.Password)
 	if err != nil {
-		return fmt.Errorf("error opening connection: %v", err)
+		fatalf("error opening connection: %v", err)
 	}
 	defer conn.Close()
 
 	// setup bercon params
-	conn.SetDeadlineTimeout(cCtx.Int("timeout"))
-	buffersize := cCtx.Int("buffer-size")
-	if buffersize < 1024 {
-		log.Warnf("Buffer sizes less than 1024 may be unstable")
-	}
-	conn.SetBufferSize(uint16(buffersize))
+	conn.SetDeadlineTimeout(opts.Timeout)
+	conn.SetBufferSize(opts.Buffer)
 
 	// execute command
-	for i, cmd := range args.Slice() {
+	for i, cmd := range args {
 		data, err := conn.Send(cmd)
 		if err != nil {
-			return fmt.Errorf("error in command %d '%s': %v", i, cmd, err)
+			fatalf("error in command %d '%s': %v", i, cmd, err)
 		}
 
-		tableprinter.ParseAndPrintData(data, cmd, cCtx.String("geo-db"), cCtx.Bool("json"))
+		tableprinter.ParseAndPrintData(data, cmd, opts.GeoDB, opts.JSON)
 	}
 
-	return nil
+	time.Sleep(1 * time.Second)
 }
 
-// initialize logging
-func prepareLogging() *log.TextFormatter {
-	formatter := log.TextFormatter{
-		ForceColors:            true,
-		DisableQuote:           false,
-		DisableTimestamp:       true,
-		DisableLevelTruncation: true,
-		PadLevelText:           true,
-	}
-
-	log.SetFormatter(&formatter)
-	log.SetLevel(log.InfoLevel)
-	log.SetOutput(os.Stderr)
-
-	return &formatter
+func printVersion() {
+	fmt.Printf(`
+file:     %s
+version:  %s
+commit:   %s
+built:    %s
+project:  %s
+`, os.Args[0], vars.Version, vars.Commit, vars.BuildTime, vars.URL)
+	os.Exit(0)
 }
 
-// setup log level
-func setupLogging(level string, formatter *log.TextFormatter) {
-	logLevel, err := log.ParseLevel(level)
-	if err != nil {
-		log.Errorf("Undefined log level %s, fallback to error level", level)
-		logLevel = log.ErrorLevel
-	}
+func fatal(a ...any) {
+	fmt.Fprintln(os.Stderr, a...)
+	os.Exit(1)
+}
 
-	log.SetLevel(logLevel)
-
-	if logLevel == log.DebugLevel {
-		formatter.DisableTimestamp = false
-		log.SetFormatter(formatter)
-	}
-
-	if logLevel == log.TraceLevel {
-		formatter.DisableTimestamp = false
-		formatter.FullTimestamp = true
-		log.SetFormatter(formatter)
-		log.SetReportCaller(true)
-	}
-
-	log.Debugf("Logger setup with level %s", level)
+func fatalf(format string, a ...any) {
+	fmt.Fprintf(os.Stderr, format, a...)
+	os.Exit(1)
 }

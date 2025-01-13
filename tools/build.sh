@@ -19,7 +19,7 @@ build() {
       -o "./build/$bin" -tags=forceposix "$WORK_DIR"/*.go
 
   [ "$GOOS" = "windows" ] && GOARCH="$GOARCH" go-winres patch \
-    --no-backup --in "winres/$BIN_NAME/winres.json" "./build/$bin"
+    --no-backup --in "winres/winres.json" "./build/$bin"
 
   cyclonedx-gomod bin -json -output "./build/$bin.sbom.json" "./build/$bin"
 

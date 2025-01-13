@@ -3,6 +3,8 @@
     "APP": {
       "0000": [
         "icon.png",
+        "icon64.png",
+        "icon32.png",
         "icon16.png"
       ]
     }

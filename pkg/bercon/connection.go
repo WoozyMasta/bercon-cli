@@ -1,4 +1,3 @@
-// Package bercon provides a BattlEye RCON connection handling (send commands, receive responses, keep alive).
 package bercon
 
 import (
@@ -32,6 +31,14 @@ type Response struct {
 	page      byte      // current page number of this response segment
 }
 
+// PacketEvent is a struct for broadcasting incoming packets (like login or messages)
+// so that client code can handle them (log them, etc.).
+type PacketEvent struct {
+	Data []byte
+	Seq  byte
+	Time time.Time
+}
+
 // Connection represents a connection to the BattlEye server.
 type Connection struct {
 	buffer     [256]*Response // buffer for storing responses indexed by sequence number
@@ -45,6 +52,10 @@ type Connection struct {
 	connMu     sync.Mutex     // mutex for synchronizing access to the UDP connection
 	alive      uint32         // atomic flag (1 if active, 0 if closed)
 	sequence   byte           // current packet sequence number
+
+	// Messages is a channel to which we will send PacketEvents for any non-command packets (e.g. loginPacket, messagePacket).
+	// Client code can read from this channel to handle them externally (logging, saving to file, etc.).
+	Messages chan PacketEvent
 }
 
 // Open initializes and returns a new Connection to the specified BattlEye server using the provided address and password.
@@ -72,6 +83,7 @@ func Open(addr, pass string) (*Connection, error) {
 		sequence:   0,
 		bufferSize: DefaultBufferSize + DefaultBufferHeaderSize,
 		timeouts:   timeouts,
+		Messages:   make(chan PacketEvent, 10),
 	}
 
 	if err := c.login(); err != nil {
@@ -133,6 +145,8 @@ func (c *Connection) Close() error {
 		}
 		c.conn = nil
 	}
+
+	close(c.Messages)
 
 	return nil
 }
@@ -313,10 +327,24 @@ func (c *Connection) startListening() {
 
 				switch pkt.kind {
 				case loginPacket:
-					// login packet received after we are already logged in? ignoring
+					// Broadcast login packet through channel
+					c.Messages <- PacketEvent{
+						Data: pkt.data,
+						Seq:  pkt.seq,
+						Time: time.Now(),
+					}
+
 				case messagePacket:
-					// acknowledge a message with empty data
+					// Forward incoming message via channel
+					c.Messages <- PacketEvent{
+						Data: pkt.data,
+						Seq:  pkt.seq,
+						Time: time.Now(),
+					}
+
+					// Acknowledge the message
 					_ = c.writePacket(messagePacket, nil, pkt.seq)
+
 				case commandPacket:
 					_ = c.storeResponse(pkt)
 				}
@@ -362,6 +390,7 @@ func (c *Connection) storeResponse(pkt *packet) error {
 			page:      pkt.page,
 			timestamp: time.Now(),
 		}
+
 	} else if c.buffer[seq].pages > 0 {
 		// appending new pages
 		if c.buffer[seq].page+1 != pkt.page {
@@ -369,8 +398,8 @@ func (c *Connection) storeResponse(pkt *packet) error {
 		}
 		c.buffer[seq].data = append(c.buffer[seq].data, pkt.data...)
 		c.buffer[seq].page = pkt.page
+
 	} else {
-		// unexpected condition
 		return ErrBadPart
 	}
 

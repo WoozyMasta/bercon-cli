@@ -52,11 +52,41 @@ func TestBerconAlive(t *testing.T) {
 	bercon.SetKeepaliveTimeout(10)
 	bercon.StartKeepAlive()
 
+	go func() {
+		for msg := range bercon.Messages {
+			fmt.Printf(
+				"Got packet seq=%d data=\"%s\" time=\"%s\"\n",
+				msg.Seq, string(msg.Data), msg.Time.Format(time.Stamp),
+			)
+		}
+	}()
+
+	time.Sleep(10 * time.Second)
+
 	_, err = bercon.Send("loadBans")
 	if err != nil {
 		t.Fatalf("Err %e", err)
 	}
-	time.Sleep(50 * time.Second)
+
+	bercon2, err := Open(address, password)
+	if err != nil {
+		t.Fatalf("Err %e", err)
+	}
+	_, err = bercon2.Send("commands")
+	if err != nil {
+		t.Fatalf("Err %e", err)
+	}
+	bercon2.Close()
+
+	time.Sleep(20 * time.Second)
+
+	bercon3, err := Open(address, password)
+	if err != nil {
+		t.Fatalf("Err %e", err)
+	}
+	bercon3.Close()
+
+	time.Sleep(20 * time.Second)
 
 	data, err := bercon.Send("bans")
 	if err != nil {

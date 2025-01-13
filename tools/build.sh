@@ -11,42 +11,47 @@ build() {
   bin=$BIN_NAME-$GOOS-$GOARCH
   [ "$GOOS" = windows ] && bin+=.exe
 
-  echo "Build $bin"
+  printf 'Build:\t%-10s%-7s' "$GOOS" "$GOARCH"
 
   CGO_ENABLED=0 GOARCH="$GOARCH" GOOS="$GOOS" \
   GOFLAGS="-buildvcs=false -trimpath" \
-    go build -ldflags="-s -w -X '$version' -X '$commit' -X '$date'" \
-      -o "./build/$bin" "$WORK_DIR"/*.go
+    go build -ldflags="-s -w -X '$version' -X '$commit' -X '$date' -X '$url'" \
+      -o "./build/$bin" -tags=forceposix "$WORK_DIR"/*.go
 
-  [ "$GOOS" = "windows" ] && GOARCH="$GOARCH" go-winres patch --no-backup "./build/$bin"
+  [ "$GOOS" = "windows" ] && GOARCH="$GOARCH" go-winres patch \
+    --no-backup --in "winres/$BIN_NAME/winres.json" "./build/$bin"
 
   cyclonedx-gomod bin -json -output "./build/$bin.sbom.json" "./build/$bin"
 
-  [ "$GOOS" = "darwin" ] || [ "$GOOS" = "windows" ] && return
-
-  if command -v xz &>/dev/null; then
-    upx --lzma --best "./build/$bin"
-    upx -t "./build/$bin"
+  if [ "$GOOS" == "linux" ] && command -v upx &>/dev/null; then
+    upx --lzma --best "./build/$bin" > /dev/null
+    upx -t "./build/$bin" > /dev/null
   fi
+
+  echo "./build/$bin"
 }
 
-package="$(grep -Po 'module \K.*$' go.mod)/pkg/config"
-version="$package.Version=$(git describe --tags --abbrev=0 2>/dev/null || echo 0.0.0)"
-commit="$package.Commit=$(git rev-parse HEAD 2>/dev/null || :)"
-date="$package.BuildTime=$(date -uIs)"
+version="internal/vars.Version=$(git describe --tags --abbrev=0 2>/dev/null || echo 0.0.0)"
+commit="internal/vars.Commit=$(git rev-parse HEAD 2>/dev/null || :)"
+date="internal/vars.BuildTime=$(date -uIs)"
+url="internal/vars.URL=https://$(grep -Po 'module \K.*$' go.mod)"
 
 mkdir -p ./build
 go mod tidy
 
-build darwin amd64
-build darwin arm64
-build linux 386
-build linux amd64
-build linux arm
-build linux arm64
-build windows 386
-build windows amd64
-build windows arm64
+if [ -z "${3:-}" ]; then
+  build darwin amd64
+  build darwin arm64
+  build linux 386
+  build linux amd64
+  build linux arm
+  build linux arm64
+  build windows 386
+  build windows amd64
+  build windows arm64
 
-cyclonedx-gomod app -json -packages -files -licenses \
-  -output "./build/$BIN_NAME.sbom.json" -main cli/
+  cyclonedx-gomod app -json -packages -files -licenses \
+    -output "./build/$BIN_NAME.sbom.json" -main "$WORK_DIR"
+else
+  build "${@:3}"
+fi

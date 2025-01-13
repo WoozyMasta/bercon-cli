@@ -6,13 +6,7 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 )
-
-func init() {
-	log.SetLevel(log.DebugLevel)
-}
 
 func initVars() (address, password string) {
 	ip, ok := os.LookupEnv("BERCON_ADDRESS")

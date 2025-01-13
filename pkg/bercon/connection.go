@@ -1,3 +1,4 @@
+// Package bercon provides a BattlEye RCON connection handling (send commands, receive responses, keep alive).
 package bercon
 
 import (
@@ -5,49 +6,48 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 )
 
+// Default timeouts and buffer sizes.
 const (
-	DefaultKeepaliveTimeout  = 30   // default keep alive in seconds, must be not more 45
-	DefaultDeadlineTimeout   = 5    // default deadline timeout in seconds
-	DefaultMicroSleepTimeout = 10   // default micro-sleep timeout in microseconds
-	DefaultBufferSize        = 1024 // 1024b max body data
-	DefaultBufferHeaderSize  = 16   // 7byte header, 1b type, 1b seq, 1b terminator, 2b pages and + just in case
+	DefaultKeepaliveTimeout  = 30   // Default keepalive in seconds, must not exceed 45
+	DefaultDeadlineTimeout   = 5    // Default deadline timeout in seconds
+	DefaultMicroSleepTimeout = 10   // Default micro-sleep timeout in milliseconds
+	DefaultBufferSize        = 1024 // 1024 bytes max body data
+	DefaultBufferHeaderSize  = 16   // 7 bytes header, 1 byte type, 1 byte seq, 1 byte terminator, 2 bytes pages, etc.
 )
 
-// defines various timeout configurations for the connection.
+// Timeouts defines various timeout configurations for the connection.
 type Timeouts struct {
 	keepalive  time.Duration // interval for sending keepalive packets
 	deadline   time.Duration // maximum time to wait for a response
 	microSleep time.Duration // sleep duration during busy-wait loops
 }
 
-// represents a single response from the server, potentially a part of a multipart response
+// Response represents a single response from the server, potentially part of a multipart response.
 type Response struct {
-	timestamp time.Time // timestamp of when this response was received
+	timestamp time.Time // timestamp when this response was received
 	data      []byte    // data received in the response
 	pages     byte      // total number of pages in the response (for multipart responses)
 	page      byte      // current page number of this response segment
 }
 
-// represents a connection to the BattlEye server
+// Connection represents a connection to the BattlEye server.
 type Connection struct {
 	buffer     [256]*Response // buffer for storing responses indexed by sequence number
 	conn       *net.UDPConn   // UDP connection to the server
 	done       chan struct{}  // channel to signal the closure of keepalive and listener routines
-	address    string         // server address in the form "IP:Port"
+	address    string         // server address in "IP:Port" format
 	password   string         // password for authenticating with the server
 	timeouts   Timeouts       // timeout configurations for this connection
 	bufferSize uint16         // size of the buffer for receiving packets
 	bufferMu   sync.Mutex     // mutex for synchronizing access to the response buffer
 	connMu     sync.Mutex     // mutex for synchronizing access to the UDP connection
-	alive      uint32         // atomic flag indicating if the connection is active (1) or closed (0)
+	alive      uint32         // atomic flag (1 if active, 0 if closed)
 	sequence   byte           // current packet sequence number
 }
 
-// initializes a new connection to the specified BattlEye server using the provided address and password
+// Open initializes and returns a new Connection to the specified BattlEye server using the provided address and password.
 func Open(addr, pass string) (*Connection, error) {
 	udpAddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
@@ -65,7 +65,7 @@ func Open(addr, pass string) (*Connection, error) {
 		microSleep: DefaultMicroSleepTimeout * time.Millisecond,
 	}
 
-	connection := &Connection{
+	c := &Connection{
 		conn:       conn,
 		address:    addr,
 		password:   pass,
@@ -74,54 +74,51 @@ func Open(addr, pass string) (*Connection, error) {
 		timeouts:   timeouts,
 	}
 
-	if err = connection.login(); err != nil {
+	if err := c.login(); err != nil {
 		return nil, err
 	}
 
-	atomic.StoreUint32(&connection.alive, 1)
-	connection.startListening()
+	atomic.StoreUint32(&c.alive, 1)
+	c.startListening()
 
-	return connection, nil
+	return c, nil
 }
 
-// sets the buffer size for receiving packets from the server
+// SetBufferSize updates the buffer size for receiving packets from the server.
 func (c *Connection) SetBufferSize(size uint16) {
 	c.bufferSize = size
 }
 
-// configures the interval (in seconds) for sending keepalive packets to maintain the connection
+// SetKeepaliveTimeout configures how often (in seconds) keepalive packets are sent to maintain the connection.
+// If seconds >= 45, it resets to the default because the server typically disconnects if the interval is too long.
 func (c *Connection) SetKeepaliveTimeout(seconds int) {
 	if seconds >= 45 {
-		log.Errorf("Keepalive timeout try set to %d, its more then limit of 45 and set to default %d seconds", seconds, DefaultKeepaliveTimeout)
 		c.timeouts.keepalive = DefaultKeepaliveTimeout * time.Second
 		return
 	}
-
 	c.timeouts.keepalive = time.Duration(seconds) * time.Second
 }
 
-// sets the timeout (in seconds) for waiting for responses from the server
+// SetDeadlineTimeout sets the max time (in seconds) to wait for a server response.
 func (c *Connection) SetDeadlineTimeout(seconds int) {
 	c.timeouts.deadline = time.Duration(seconds) * time.Second
 }
 
-// adjusts the micro-sleep interval (in milliseconds) used for busy-wait loops
-func (c *Connection) SetMicroSleepTimeout(millisecond int) {
-	c.timeouts.microSleep = time.Duration(millisecond) * time.Millisecond
+// SetMicroSleepTimeout adjusts the micro-sleep interval (in milliseconds) used in busy-wait loops.
+func (c *Connection) SetMicroSleepTimeout(milliseconds int) {
+	c.timeouts.microSleep = time.Duration(milliseconds) * time.Millisecond
 }
 
-// checks if the connection is active and not closed
+// IsAlive checks if the connection is active and not closed.
 func (c *Connection) IsAlive() bool {
-	return atomic.LoadUint32(&c.alive) == 1 // Atomic reading
+	return atomic.LoadUint32(&c.alive) == 1
 }
 
-// gracefully closes the connection, releases resources, and ensures no further operations are performed
+// Close gracefully closes the connection, releases resources, and ensures no further operations are performed.
 func (c *Connection) Close() error {
 	if !c.IsAlive() {
-		log.Debug("Connection already closed")
 		return nil
 	}
-
 	atomic.StoreUint32(&c.alive, 0)
 
 	if c.done != nil {
@@ -130,8 +127,6 @@ func (c *Connection) Close() error {
 	}
 
 	if c.conn != nil {
-		log.Info("BattlEye RCON closed")
-
 		err := c.conn.Close()
 		if err != nil {
 			return err
@@ -142,38 +137,35 @@ func (c *Connection) Close() error {
 	return nil
 }
 
-// begins a routine that sends periodic keepalive packets to maintain the connection
+// StartKeepAlive begins a routine that sends periodic keepalive packets.
 func (c *Connection) StartKeepAlive() {
 	if c.done != nil {
-		log.Warn("Keepalive already exists, not starting again")
+		// Keepalive is already running.
 		return
 	}
-
 	c.done = make(chan struct{})
 
 	go func() {
-		ticker := time.NewTicker(c.timeouts.keepalive) // keepalive timer
+		ticker := time.NewTicker(c.timeouts.keepalive)
 		defer ticker.Stop()
 
 		for {
 			select {
-			case <-ticker.C: // every keepaliveTimeout seconds
+			case <-ticker.C:
+				// send keepalive
 				_, err := c.Send("")
 				if err != nil {
-					log.Errorf("Keepalive failed (%e)", err)
 					c.Close()
 					return
 				}
-
-			case <-c.done: // done signal was received
-				log.Info("Keepalive stopped")
+			case <-c.done:
 				return
 			}
 		}
 	}()
 }
 
-// sends a command to the BattlEye server and waits for a response, returning the data received
+// Send dispatches a command to the BattlEye server and waits for a response.
 func (c *Connection) Send(command string) ([]byte, error) {
 	if !c.IsAlive() {
 		return nil, ErrConnectionDown
@@ -184,40 +176,31 @@ func (c *Connection) Send(command string) ([]byte, error) {
 
 	seq := c.sequence
 
-	// checking that the buffer is not full for the current sequence
+	// check if buffer is occupied by current seq
 	if c.buffer[seq] != nil {
-		// wait if the buffer is already busy
 		timeout := time.After(c.timeouts.deadline)
 		for {
 			select {
 			case <-timeout:
 				return nil, ErrBufferFull
-
 			default:
 				if c.buffer[seq] == nil {
 					break
 				}
-
-				log.Tracef("Buffer is full, wait %fs in %fs loop", c.timeouts.microSleep.Seconds(), c.timeouts.deadline.Seconds())
 				time.Sleep(c.timeouts.microSleep)
 			}
 		}
 	}
 
-	// increment sequence
+	// increment seq
 	c.sequence++
 
-	// packet sent
+	// send the packet
 	if err := c.writePacket(commandPacket, []byte(command), seq); err != nil {
 		return nil, err
 	}
 
-	if command == "" {
-		log.Debugf("Keepalive packet #%d sent", seq)
-	} else {
-		log.Debugf("Command '%s' sent in packet #%d", command, seq)
-	}
-
+	// keepalive packets are empty commands
 	// waiting for an answer
 	data, err := c.getResponse(seq)
 	if err != nil {
@@ -227,7 +210,7 @@ func (c *Connection) Send(command string) ([]byte, error) {
 	return data, nil
 }
 
-// waits for and retrieves the response for the specified packet sequence number
+// getResponse waits for and retrieves the server response for the specified seq.
 func (c *Connection) getResponse(seq byte) ([]byte, error) {
 	timeout := time.After(c.timeouts.deadline)
 
@@ -237,35 +220,29 @@ func (c *Connection) getResponse(seq byte) ([]byte, error) {
 			return nil, ErrTimeout
 
 		case <-c.done:
-			if !c.IsAlive() {
-				log.Debugf("Response reading stopped due to connection closure.")
-				return nil, ErrConnectionClosed
-			}
-
 			return nil, ErrConnectionClosed
 
 		default:
 			c.bufferMu.Lock()
-
 			if c.buffer[seq] != nil {
-				response := c.buffer[seq]
-
-				if response.pages == 0 || response.pages == response.page+1 {
-					data := response.data
+				resp := c.buffer[seq]
+				// if all parts collected or it's a single-part
+				if resp.pages == 0 || resp.pages == resp.page+1 {
+					data := resp.data
 					c.buffer[seq] = nil
 					c.bufferMu.Unlock()
+
 					return data, nil
 				}
 			}
-
 			c.bufferMu.Unlock()
 
-			time.Sleep(c.timeouts.microSleep) // short pause before recheck
+			time.Sleep(c.timeouts.microSleep)
 		}
 	}
 }
 
-// authenticates with the server using the provided password
+// login authenticates with the server using the provided password.
 func (c *Connection) login() error {
 	c.connMu.Lock()
 	defer c.connMu.Unlock()
@@ -273,7 +250,6 @@ func (c *Connection) login() error {
 	if err := c.writePacket(loginPacket, []byte(c.password), 0); err != nil {
 		return err
 	}
-	log.Debug("Login request send")
 
 	if err := c.conn.SetReadDeadline(time.Now().Add(c.timeouts.deadline)); err != nil {
 		return err
@@ -288,148 +264,115 @@ func (c *Connection) login() error {
 		return err
 	}
 
-	if packet.data[0] != loginSuccess {
+	if len(packet.data) == 0 || packet.data[0] != loginSuccess {
 		return ErrLoginFailed
 	}
-	log.Infof("Login to %s success", c.address)
 
 	return nil
 }
 
-// constructs and sends a packet of the specified type and sequence to the server
+// writePacket constructs and sends a packet of the specified type, data and sequence to the server.
 func (c *Connection) writePacket(kind packetKind, data []byte, seq byte) error {
-	if len(data) > int(c.bufferSize-9) { // 9 == header 7-bytes, 1-byte type, 1-byte sequence number
+	if len(data) > int(c.bufferSize-9) {
+		// 9 == 7-bytes header + 1-byte type + 1-byte sequence
 		return ErrBadSize
 	}
 
-	packet := new(packet)
-	packet.make([]byte(data), kind, seq)
-	data, err := packet.toBytes()
+	pkt := new(packet)
+	pkt.make(data, kind, seq)
+	raw, err := pkt.toBytes()
 	if err != nil {
 		return err
 	}
 
-	_, err = c.conn.Write(data)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	_, err = c.conn.Write(raw)
+	return err
 }
 
-// starts a goroutine to handle incoming packets from the server
+// startListening starts a goroutine that handles incoming packets from the server.
 func (c *Connection) startListening() {
-	log.Debugf("Listening start")
-
 	go func() {
 		for {
 			select {
 			case <-c.done:
-				log.Debugf("Listening stopped")
 				return
-
 			default:
 				if c.conn == nil || !c.IsAlive() {
-					log.Warn("Connection is closed, stopping listener")
 					c.Close()
 					return
 				}
 
-				packet, err := c.readPacket()
+				pkt, err := c.readPacket()
 				if err != nil {
 					if !c.IsAlive() {
-						log.Debugf("Read aborted due to connection closure")
 						return
 					}
-
-					log.Warnf("Failed to get response: %v", err)
 					c.Close()
 					return
 				}
 
-				switch packet.kind {
+				switch pkt.kind {
 				case loginPacket:
-					log.Infof("Login session: %s", packet.data)
-
+					// login packet received after we are already logged in? ignoring
 				case messagePacket:
-					c.messageAcknowledge(packet)
-
+					// acknowledge a message with empty data
+					_ = c.writePacket(messagePacket, nil, pkt.seq)
 				case commandPacket:
-					if err := c.storeResponse(packet); err != nil {
-						log.Warnf("Failed to store response: %v", err)
-					}
+					_ = c.storeResponse(pkt)
 				}
 			}
 		}
 	}()
 }
 
-// reads a single packet from the server and returns it
+// readPacket reads a single packet from the server and returns it.
 func (c *Connection) readPacket() (*packet, error) {
-	var response *packet
-
-	if c.conn == nil { // closed connection
-		return response, ErrConnectionClosed
+	if c.conn == nil {
+		return nil, ErrConnectionClosed
 	}
 
 	buf := make([]byte, c.bufferSize)
-	count, err := c.conn.Read(buf)
+	n, err := c.conn.Read(buf)
 	if err != nil {
 		if netErr, ok := err.(*net.OpError); ok && c.done == nil && netErr.Err.Error() == "use of closed network connection" {
-			return response, ErrConnectionClosed
+			return nil, ErrConnectionClosed
 		}
-		return response, err
+		return nil, err
 	}
 
-	response, err = fromBytes(buf[:count])
+	pkt, err := fromBytes(buf[:n])
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 
-	return response, nil
+	return pkt, nil
 }
 
-// stores the received response packet in the buffer, assembling multipart responses if necessary
-func (c *Connection) storeResponse(response *packet) error {
+// storeResponse handles the received command packet response in the buffer, collecting multipart segments if necessary.
+func (c *Connection) storeResponse(pkt *packet) error {
 	c.bufferMu.Lock()
 	defer c.bufferMu.Unlock()
 
-	seq := response.seq
+	seq := pkt.seq
 
-	if c.buffer[seq] == nil { // if this is the first segment of the packet, create a new response
+	if c.buffer[seq] == nil {
 		c.buffer[seq] = &Response{
-			data:      response.data,
-			pages:     response.pages,
-			page:      response.page,
+			data:      pkt.data,
+			pages:     pkt.pages,
+			page:      pkt.page,
 			timestamp: time.Now(),
 		}
-
-	} else if c.buffer[seq].pages > 0 { // populate data in exists response
-		if c.buffer[seq].page+1 != response.page {
+	} else if c.buffer[seq].pages > 0 {
+		// appending new pages
+		if c.buffer[seq].page+1 != pkt.page {
 			return ErrBadSequence
 		}
-		c.buffer[seq].data = append(c.buffer[seq].data, response.data...)
-		c.buffer[seq].page = response.page
+		c.buffer[seq].data = append(c.buffer[seq].data, pkt.data...)
+		c.buffer[seq].page = pkt.page
 	} else {
-
-		log.Warn("Didn't expect such behavior, don't know how it happened")
-	}
-
-	// Проверяем, завершён ли пакет
-	if c.buffer[seq].page+1 == c.buffer[seq].pages {
-		log.Tracef("All %d parts of the multipart response #%d have been received", c.buffer[seq].pages, seq)
+		// unexpected condition
+		return ErrBadPart
 	}
 
 	return nil
-}
-
-// sends an acknowledgment for a received message packet back to the server
-func (c *Connection) messageAcknowledge(packet *packet) {
-	log.Debugf("Message received: %s", packet.data)
-
-	if err := c.writePacket(messagePacket, nil, packet.seq); err != nil {
-		log.Warnf("Failed acknowledge to message: %v", err)
-	}
-
-	log.Traceln("Acknowledge message")
 }

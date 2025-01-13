@@ -27,6 +27,7 @@ runs:
       with:
         version: v1.60
 
+    # for windows can use betteralign ./...
     - name: Check Golang structures
       uses: essentialkaos/aligo-action@v2
       with:

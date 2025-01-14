@@ -106,7 +106,7 @@ func (p *Players) Parse(data []byte) {
 			ID:    byte(id),
 			IP:    ip,
 			Port:  port,
-			Ping:  uint16(ping),
+			Ping:  uint16(ping), // #nosec G115
 			GUID:  guid,
 			Valid: valid,
 			Name:  strings.TrimSpace(name),

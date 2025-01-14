@@ -49,23 +49,21 @@ bercon-cli --help
 ```
 
 ```txt
-NAME:
-   bercon-cli - BattlEye RCon CLI
+Usage:
+  bercon-cli [OPTIONS] command [command, command, ...]
 
-USAGE:
-   bercon-cli [options] command [command, command, ...]
+BattlEye RCon CLI.
 
-OPTIONS:
-   --ip value, -i value           server IPv4 address (default: "127.0.0.1") [$BERCON_ADDRESS]
-   --port value, -p value         server RCON port (default: 2305) [$BERCON_PORT]
-   --password value, -P value     server RCON password [$BERCON_PASSWORD]
-   --json, -j                     print result in JSON format (default: false) [$BERCON_JSON_OUTPUT]
-   --geo-db value, -g value       path to Country GeoDB mmdb file [$BERCON_GEO_DB]
-   --timeout value, -t value      deadline and timeout in seconds (default: 5) [$BERCON_TIMEOUT]
-   --buffer-size value, -b value  buffer size for RCON connection (default: 1024) [$BERCON_BUFFER_SIZE]
-   --log-level value, -l value    log level (default: "error") [$BERCON_LOG_LEVEL]
-   --version, -v                  print version
-   --help, -h                     show help
+Application Options:
+  -i, --ip=          Server IPv4 address (default: 127.0.0.1) [$BERCON_ADDRESS]
+  -P, --password=    Server RCON password [$BERCON_PASSWORD]
+  -g, --geo-db=      Path to Country GeoDB mmdb file [$BERCON_GEO_DB]
+  -p, --port=        Server RCON port (default: 2305) [$BERCON_PORT]
+  -t, --timeout=     Deadline and timeout in seconds (default: 3) [$BERCON_TIMEOUT]
+  -b, --buffer-size= Buffer size for RCON connection (default: 1024) [$BERCON_BUFFER_SIZE]
+  -j, --json         Print result in JSON format [$BERCON_JSON_OUTPUT]
+  -h, --help         Show version, commit, and build time
+  -v, --version      Prints this help message
 ```
 
 You can also use environment variables, they are specified in the help in

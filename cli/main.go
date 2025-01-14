@@ -36,9 +36,9 @@ type Options struct {
 	// print result in JSON format
 	JSON bool `short:"j" long:"json" description:"Print result in JSON format" env:"BERCON_JSON_OUTPUT"`
 	// server IPv4 address
-	Help bool `short:"h" long:"help" description:"Show version, commit, and build time;"`
+	Help bool `short:"h" long:"help" description:"Show version, commit, and build time"`
 	// server IPv4 address
-	Version bool `short:"v" long:"version" description:"Prints this help message."`
+	Version bool `short:"v" long:"version" description:"Prints this help message"`
 }
 
 func main() {
@@ -51,7 +51,6 @@ func main() {
 
 	args, err := p.Parse()
 	if err != nil {
-		// fatal(err)
 		os.Exit(0)
 	}
 

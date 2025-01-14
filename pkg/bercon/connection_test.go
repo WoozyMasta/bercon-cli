@@ -6,6 +6,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/woozymasta/bercon-cli/pkg/beparser"
 )
 
 func initVars() (address, password string) {
@@ -141,6 +143,46 @@ func TestBerconLoop(t *testing.T) {
 	for err := range errorCh {
 		if err != nil {
 			t.Error(err)
+		}
+	}
+
+	bercon.Close()
+}
+
+func TestRingBuffer(t *testing.T) {
+	address, password := initVars()
+	bercon, err := Open(address, password)
+	if err != nil {
+		t.Fatalf("Err %v", err)
+	}
+
+	// buff size 256, 3 request * 180 = 540 requests (2.1 full buffer)
+	for i := 0; i < 180; i++ {
+		players, err := bercon.Send("players")
+		if err != nil {
+			t.Fatalf("Fail get players %e", err)
+		}
+		playersData := beparser.Parse(players, "players")
+		if _, ok := playersData.(*beparser.Players); !ok {
+			t.Fatal("Response is not players")
+		}
+
+		bans, err := bercon.Send("bans")
+		if err != nil {
+			t.Fatalf("Fail get bans %e", err)
+		}
+		bansData := beparser.Parse(bans, "bans")
+		if _, ok := bansData.(*beparser.Bans); !ok {
+			t.Fatal("Response is not bans")
+		}
+
+		admins, err := bercon.Send("admins")
+		if err != nil {
+			t.Fatalf("Fail get admins %e", err)
+		}
+		adminsData := beparser.Parse(admins, "admins")
+		if _, ok := adminsData.(*beparser.Admins); !ok {
+			t.Fatal("Response is not admins")
 		}
 	}
 

@@ -34,28 +34,29 @@ type Response struct {
 // PacketEvent is a struct for broadcasting incoming packets (like login or messages)
 // so that client code can handle them (log them, etc.).
 type PacketEvent struct {
+	Time time.Time
 	Data []byte
 	Seq  byte
-	Time time.Time
 }
 
 // Connection represents a connection to the BattlEye server.
 type Connection struct {
-	buffer     [256]*Response // buffer for storing responses indexed by sequence number
-	conn       *net.UDPConn   // UDP connection to the server
-	done       chan struct{}  // channel to signal the closure of keepalive and listener routines
-	address    string         // server address in "IP:Port" format
-	password   string         // password for authenticating with the server
-	timeouts   Timeouts       // timeout configurations for this connection
-	bufferSize uint16         // size of the buffer for receiving packets
-	bufferMu   sync.Mutex     // mutex for synchronizing access to the response buffer
-	connMu     sync.Mutex     // mutex for synchronizing access to the UDP connection
-	alive      uint32         // atomic flag (1 if active, 0 if closed)
-	sequence   byte           // current packet sequence number
+	buffer [256]*Response // buffer for storing responses indexed by sequence number
+	conn   *net.UDPConn   // UDP connection to the server
+	done   chan struct{}  // channel to signal the closure of keepalive and listener routines
 
 	// Messages is a channel to which we will send PacketEvents for any non-command packets (e.g. loginPacket, messagePacket).
 	// Client code can read from this channel to handle them externally (logging, saving to file, etc.).
-	Messages chan PacketEvent
+	Messages   chan PacketEvent
+	address    string     // server address in "IP:Port" format
+	password   string     // password for authenticating with the server
+	timeouts   Timeouts   // timeout configurations for this connection
+	bufferMu   sync.Mutex // mutex for synchronizing access to the response buffer
+	connMu     sync.Mutex // mutex for synchronizing access to the UDP connection
+	alive      uint32     // atomic flag (1 if active, 0 if closed)
+	bufferSize uint16     // size of the buffer for receiving packets
+	sequence   byte       // current packet sequence number
+
 }
 
 // Open initializes and returns a new Connection to the specified BattlEye server using the provided address and password.

@@ -1,4 +1,4 @@
-package tableprinter
+package printer
 
 import (
 	"encoding/json"
@@ -34,11 +34,11 @@ func ParseAndPrintData(data []byte, cmd, geoDB string, json bool) error {
 	if geoDB != "" {
 		switch pData := parsedData.(type) {
 		case *beparser.Players:
-			PrintPlayers(*pData)
+			return PrintPlayers(*pData)
 		case *beparser.Bans:
-			PrintBans(*pData)
+			return PrintBans(*pData)
 		case *beparser.Admins:
-			PrintAdmins(*pData)
+			return PrintAdmins(*pData)
 
 		default:
 			printPlain(data)

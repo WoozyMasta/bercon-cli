@@ -4,30 +4,37 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
+
+	"internal/vars"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/woozymasta/bercon-cli/internal/tableprinter"
-	"github.com/woozymasta/bercon-cli/internal/vars"
+	"github.com/woozymasta/bercon-cli/internal/printer"
 	"github.com/woozymasta/bercon-cli/pkg/bercon"
+)
+
+var (
+	Version   string // Version of application (git tag)
+	Commit    string // Current git commit
+	BuildTime string // Time of start build app
+	URL       string // URL to repository
 )
 
 // CLI options
 type Options struct {
 	// server IPv4 address
 	IP string `short:"i" long:"ip" description:"Server IPv4 address" default:"127.0.0.1" env:"BERCON_ADDRESS"`
-	// server RCON port
-	Port int `short:"p" long:"port" description:"Server RCON port" default:"2305" env:"BERCON_PORT"`
 	// server RCON password
 	Password string `short:"P" long:"password" description:"Server RCON password" env:"BERCON_PASSWORD"`
-	// print result in JSON format
-	JSON bool `short:"j" long:"json" description:"Print result in JSON format" env:"BERCON_JSON_OUTPUT"`
 	// path to Country GeoDB mmdb file
 	GeoDB string `short:"g" long:"geo-db" description:"Path to Country GeoDB mmdb file" env:"BERCON_GEO_DB"`
+	// server RCON port
+	Port int `short:"p" long:"port" description:"Server RCON port" default:"2305" env:"BERCON_PORT"`
 	// deadline and timeout in seconds
 	Timeout int `short:"t" long:"timeout" description:"Deadline and timeout in seconds" default:"3" env:"BERCON_TIMEOUT"`
 	// buffer size for RCON connection
 	Buffer uint16 `short:"b" long:"buffer-size" description:"Buffer size for RCON connection" default:"1024" env:"BERCON_BUFFER_SIZE"`
+	// print result in JSON format
+	JSON bool `short:"j" long:"json" description:"Print result in JSON format" env:"BERCON_JSON_OUTPUT"`
 	// server IPv4 address
 	Help bool `short:"h" long:"help" description:"Show version, commit, and build time;"`
 	// server IPv4 address
@@ -67,7 +74,11 @@ func main() {
 	if err != nil {
 		fatalf("error opening connection: %v", err)
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			fatalf("cant close connection: %v", err)
+		}
+	}()
 
 	// setup bercon params
 	conn.SetDeadlineTimeout(opts.Timeout)
@@ -80,10 +91,10 @@ func main() {
 			fatalf("error in command %d '%s': %v", i, cmd, err)
 		}
 
-		tableprinter.ParseAndPrintData(data, cmd, opts.GeoDB, opts.JSON)
+		if err := printer.ParseAndPrintData(data, cmd, opts.GeoDB, opts.JSON); err != nil {
+			fatalf("cant print response data: %v", err)
+		}
 	}
-
-	time.Sleep(1 * time.Second)
 }
 
 func printVersion() {

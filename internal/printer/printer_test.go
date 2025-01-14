@@ -1,4 +1,4 @@
-package tableprinter
+package printer
 
 import (
 	"os"

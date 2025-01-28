@@ -44,6 +44,7 @@ type Connection struct {
 	buffer [256]*Response // buffer for storing responses indexed by sequence number
 	conn   *net.UDPConn   // UDP connection to the server
 	done   chan struct{}  // channel to signal the closure of keepalive and listener routines
+	wg     sync.WaitGroup // wait group for listener
 
 	// Messages is a channel to which we will send PacketEvents for any non-command packets (e.g. loginPacket, messagePacket).
 	// Client code can read from this channel to handle them externally (logging, saving to file, etc.).
@@ -139,15 +140,16 @@ func (c *Connection) Close() error {
 		c.done = nil
 	}
 
+	// Properly wait for stop startListening()
+	c.wg.Wait()
+	close(c.Messages)
+
 	if c.conn != nil {
-		err := c.conn.Close()
-		if err != nil {
+		if err := c.conn.Close(); err != nil {
 			return err
 		}
 		c.conn = nil
 	}
-
-	close(c.Messages)
 
 	return nil
 }
@@ -306,7 +308,11 @@ func (c *Connection) writePacket(kind packetKind, data []byte, seq byte) error {
 
 // startListening starts a goroutine that handles incoming packets from the server.
 func (c *Connection) startListening() {
+	c.wg.Add(1)
+
 	go func() {
+		defer c.wg.Done()
+
 		for {
 			select {
 			case <-c.done:
@@ -319,9 +325,6 @@ func (c *Connection) startListening() {
 
 				pkt, err := c.readPacket()
 				if err != nil {
-					if !c.IsAlive() {
-						return
-					}
 					_ = c.Close()
 					return
 				}
@@ -329,18 +332,26 @@ func (c *Connection) startListening() {
 				switch pkt.kind {
 				case loginPacket:
 					// Broadcast login packet through channel
-					c.Messages <- PacketEvent{
+					select {
+					case c.Messages <- PacketEvent{
 						Data: pkt.data,
 						Seq:  pkt.seq,
 						Time: time.Now(),
+					}:
+					case <-c.done:
+						return
 					}
 
 				case messagePacket:
 					// Forward incoming message via channel
-					c.Messages <- PacketEvent{
+					select {
+					case c.Messages <- PacketEvent{
 						Data: pkt.data,
 						Seq:  pkt.seq,
 						Time: time.Now(),
+					}:
+					case <-c.done:
+						return
 					}
 
 					// Acknowledge the message

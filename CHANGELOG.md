@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning][].
 ### Removed
 -->
 
+## [0.3.1][] - 2025-01-28
+
+### Changed
+
+* listener now uses a waiting group and checks for connectivity in all received
+  packets to prevent race conditions when reading from a message channel
+
+[0.3.1]: https://github.com/WoozyMasta/bercon-cli/compare/v0.3.0...v0.3.1
+
 ## [0.3.0][] - 2025-01-14
 
 Refactoring and Simplification

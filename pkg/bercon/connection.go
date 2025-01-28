@@ -135,21 +135,21 @@ func (c *Connection) Close() error {
 	}
 	atomic.StoreUint32(&c.alive, 0)
 
-	if c.done != nil {
-		close(c.done)
-		c.done = nil
-	}
-
-	// Properly wait for stop startListening()
-	c.wg.Wait()
-	close(c.Messages)
-
 	if c.conn != nil {
 		if err := c.conn.Close(); err != nil {
 			return err
 		}
 		c.conn = nil
 	}
+
+	if c.done != nil {
+		close(c.done)
+		c.done = nil
+	}
+
+	// Properly wait for stop startListening() and close messages chan
+	c.wg.Wait()
+	close(c.Messages)
 
 	return nil
 }

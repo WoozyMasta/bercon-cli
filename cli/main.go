@@ -97,8 +97,7 @@ func main() {
 }
 
 func printVersion() {
-	fmt.Printf(`
-file:     %s
+	fmt.Printf(`file:     %s
 version:  %s
 commit:   %s
 built:    %s

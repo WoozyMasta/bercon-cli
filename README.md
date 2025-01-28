@@ -35,7 +35,7 @@ For Linux you can also use the command
 ```bash
 curl -#SfLo /usr/bin/bercon-cli \
   https://github.com/WoozyMasta/bercon-cli/releases/latest/download/bercon-cli-linux-amd64
-chmod +x /usr/bin/bercon
+chmod +x /usr/bin/bercon-cli
 bercon-cli -h && bercon-cli -v
 ```
 

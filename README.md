@@ -212,17 +212,22 @@ dayz-all-restart() {
   dayz-all-rcon \
     '#lock' \
     "say -1 Server locked for new connection, restart after $timer seconds"
+
   for i in $(seq "$timer" "-$step" 0); do
     sleep "$step"
+    ((timer-=step)) || :
     dayz-all-rcon "say -1 Restart server after $timer seconds"
   done
+
+  dayz-all-rcon 'kick -1'
+  sleep "$step"
   dayz-all-rcon '#shutdown'
 }
 
 # restart all servers after 120 (default) seconds
 dayz-all-restart
-# restart all servers after 360 seconds
-dayz-all-restart 360
+# restart all servers after 360 seconds and send messages every 20 seconds
+dayz-all-restart 360 20
 ```
 
 ## Support me 💖

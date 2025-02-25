@@ -191,7 +191,7 @@ dayz-all-rcon() {
   for i in $(seq 1 "$DAYZ_SERVERS_COUNT"); do
     printf '[$s] ' "Server-$i"
     . "~/.server-$i.env".
-    bercon-cli -t 1 -- $@;
+    bercon-cli -t 1 -- "$@";
     echo
   done
 }

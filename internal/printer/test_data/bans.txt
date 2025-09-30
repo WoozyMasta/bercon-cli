@@ -1,0 +1,13 @@
+GUID Bans:
+[#] [GUID] [Minutes left] [Reason]
+----------------------------------------
+0   11111111111122222222222223333333    163901         cheater
+1   11111111111122222222222223333333    -              test
+2   46738531902119115863919137179602    perm           exploit
+
+IP Bans:
+[#] [IP Address] [Minutes left] [Reason]
+----------------------------------------------
+3   127.0.0.1       perm           local connections disabled
+4   8.8.8.8         163901         abuse
+5   10.10.10.10     -              ddos attempt

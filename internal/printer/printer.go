@@ -1,70 +1,42 @@
+// Package printer provides utilities for formatting and printing
+// BattlEye RCon responses in various output formats (table, JSON, raw, etc.).
 package printer
 
-import (
-	"encoding/json"
-	"fmt"
+import "strings"
 
-	"github.com/woozymasta/bercon-cli/pkg/beparser"
+// Format is an output format selector for printer.
+type Format int
+
+const (
+	// FormatTable prints responses in human-friendly table format.
+	FormatTable Format = iota
+	// FormatJSON prints responses as JSON.
+	FormatJSON
+	// FormatPlain prints raw responses as plain text.
+	FormatPlain
+	// FormatMarkdown prints responses as Markdown tables or code blocks.
+	FormatMarkdown
+	// FormatHTML prints responses as HTML tables or pre blocks.
+	FormatHTML
 )
 
-// parse data for cmd and print as table
-func ParseAndPrintData(data []byte, cmd, geoDB string, json bool) error {
-	// print if not geo enabled
-	if geoDB == "" {
-		if json {
-			return printJSON(beparser.Parse(data, cmd))
-		}
+// FormatFromString converts a string like "json", "table", "raw" into a Format constant.
+// Unknown values default to FormatTable.
+func FormatFromString(s string) Format {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "json":
+		return FormatJSON
 
-		printPlain(data)
-		return nil
+	case "plain", "text", "raw":
+		return FormatPlain
+
+	case "md", "markdown":
+		return FormatMarkdown
+
+	case "html", "htm":
+		return FormatHTML
+
+	default:
+		return FormatTable // "table" or any
 	}
-
-	// parse data with geo
-	parsedData, err := beparser.ParseWithGeoDB(data, cmd, geoDB)
-	if err != nil {
-		return fmt.Errorf("parse response: %v", err)
-	}
-
-	// print json response
-	if json {
-		return printJSON(parsedData)
-	}
-
-	// print table response with geo
-	if geoDB != "" {
-		switch pData := parsedData.(type) {
-		case *beparser.Players:
-			return PrintPlayers(*pData)
-		case *beparser.Bans:
-			return PrintBans(*pData)
-		case *beparser.Admins:
-			return PrintAdmins(*pData)
-
-		default:
-			printPlain(data)
-		}
-	}
-
-	return nil
-}
-
-func printPlain(data []byte) {
-	if len(data) == 0 {
-		fmt.Println("OK")
-		return
-	}
-
-	fmt.Println(string(data))
-}
-
-// parse and print data as json
-func printJSON(data any) error {
-	jsonData, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		return fmt.Errorf("error converting data to JSON: %v", err)
-	}
-
-	fmt.Println(string(jsonData))
-
-	return nil
 }

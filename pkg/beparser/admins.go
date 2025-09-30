@@ -5,15 +5,20 @@ import (
 	"strings"
 )
 
-// Admin represents a connected RCon admin.
+// Admin represents a connected RCon administrator parsed from the
+// "Connected RCon admins:" section. Geolocation fields are optional and
+// are filled by SetGeo/SetCountryCode if a GeoIP database is provided.
 type Admin struct {
-	IP      string `json:"ip"`
-	Country string `json:"country,omitempty"`
-	Port    uint16 `json:"port"`
-	ID      byte   `json:"id"`
+	IP        string  `json:"ip"`
+	Country   string  `json:"country,omitempty"`
+	City      string  `json:"city,omitempty"`
+	Latitude  float64 `json:"lat,omitempty"`
+	Longitude float64 `json:"lon,omitempty"`
+	Port      uint16  `json:"port"`
+	ID        byte    `json:"id"`
 }
 
-// Admins represents a []Admin list.
+// Admins is a slice of Admin.
 type Admins []Admin
 
 const (
@@ -25,12 +30,13 @@ const (
 	adminsStartString = "Connected RCon admins:"
 )
 
-// Create new Admins
+// NewAdmins returns an empty Admins slice.
 func NewAdmins() *Admins {
 	return &Admins{}
 }
 
-// ParseAdmins parses the admin section of the input.
+// Parse fills the Admins slice from the plaintext BattlEye response
+// of the "admins" command.
 func (a *Admins) Parse(data []byte) {
 	lines := strings.Split(string(data), "\n")
 

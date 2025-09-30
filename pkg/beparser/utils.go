@@ -18,7 +18,8 @@ func parseAddress(addr string) (string, uint16) {
 		return ip, 0
 	}
 
-	port, err := strconv.ParseUint(address[1], 10, 16)
+	portStr := strings.TrimSpace(address[1])
+	port, err := strconv.ParseUint(portStr, 10, 16)
 	if err != nil {
 		return ip, 0
 	}

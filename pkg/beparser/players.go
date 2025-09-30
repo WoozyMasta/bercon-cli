@@ -5,20 +5,24 @@ import (
 	"strings"
 )
 
-// Player represents a single player.
+// Player represents a single player entry parsed from the "Players on server:"
+// section. Geolocation fields are optional and are filled by SetGeo/SetCountryCode.
 type Player struct {
-	IP      string `json:"ip"`
-	GUID    string `json:"guid"`
-	Name    string `json:"name"`
-	Country string `json:"country,omitempty"`
-	Port    uint16 `json:"port"`
-	Ping    uint16 `json:"ping"`
-	ID      byte   `json:"id"`
-	Valid   bool   `json:"valid"`
-	Lobby   bool   `json:"lobby"`
+	IP        string  `json:"ip"`
+	GUID      string  `json:"guid"`
+	Name      string  `json:"name"`
+	Country   string  `json:"country,omitempty"`
+	City      string  `json:"city,omitempty"`
+	Latitude  float64 `json:"lat,omitempty"`
+	Longitude float64 `json:"lon,omitempty"`
+	Port      uint16  `json:"port"`
+	Ping      uint16  `json:"ping"`
+	ID        byte    `json:"id"`
+	Valid     bool    `json:"valid"`
+	Lobby     bool    `json:"lobby"`
 }
 
-// Players represents a []Player list.
+// Players is a slice of Player.
 type Players []Player
 
 const (
@@ -38,12 +42,13 @@ const (
 	defaultPing = 0
 )
 
-// Create new Players
+// NewPlayers returns an empty Players slice.
 func NewPlayers() *Players {
 	return &Players{}
 }
 
-// ParsePlayers parses the player section of the input.
+// Parse fills the Players slice from the plaintext BattlEye response
+// of the "players" command.
 func (p *Players) Parse(data []byte) {
 	lines := strings.Split(string(data), "\n")
 

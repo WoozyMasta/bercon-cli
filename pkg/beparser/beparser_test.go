@@ -10,37 +10,71 @@ import (
 	"github.com/oschwald/geoip2-golang"
 )
 
-// LoadTestData reads test data from a specified text file.
-func LoadTestData(filename string) ([]byte, error) {
+// loadTestData reads test data from a specified text file.
+func loadTestData(filename string) ([]byte, error) {
 	data, err := os.ReadFile(filepath.Join("test_data", filename))
 	if err != nil {
 		return nil, err
 	}
+
 	return data, nil
 }
 
-// PrintJSON prints the given data in a JSON format.
-func PrintJSON(title string, data interface{}) {
+// printJSON prints the given data in a JSON format.
+func printJSON(title string, data interface{}) {
+	if os.Getenv("PRINT_JSON") == "0" {
+		return
+	}
+
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		fmt.Printf("Error converting %s to JSON: %v", title, err)
 		return
 	}
+
 	fmt.Printf("%s:\n%s\n", title, string(jsonData))
+}
+
+// loadGeoOrSkip tries to open GeoIP DB (path from BERCON_GEO_DB env or default files).
+// Skips the test if DB not found.
+func loadGeoOrSkip(t *testing.T) *geoip2.Reader {
+	t.Helper()
+
+	// env has priority
+	if p := os.Getenv("BERCON_GEO_DB"); p != "" {
+		db, err := geoip2.Open(p)
+		if err == nil {
+			t.Cleanup(func() { _ = db.Close() })
+			return db
+		}
+		t.Skipf("skip: failed to open %s (%v)", p, err)
+	}
+
+	// common candidates
+	for _, c := range []string{"GeoLite2-City.mmdb", "GeoLite2-Country.mmdb"} {
+		if _, err := os.Stat(c); err == nil {
+			db, err := geoip2.Open(c)
+			if err == nil {
+				t.Cleanup(func() { _ = db.Close() })
+				return db
+			}
+			t.Skipf("skip: failed to open %s (%v)", c, err)
+		}
+	}
+
+	t.Skip("skip: no GeoLite2 mmdb found (set BERCON_GEO_DB to override)")
+	return nil
 }
 
 // TestParsePlayers tests the ParsePlayers function.
 func TestParsePlayers(t *testing.T) {
-	input, err := LoadTestData("players.txt")
+	input, err := loadTestData("players.txt")
 	if err != nil {
 		t.Fatalf("Failed to load players test data: %v", err)
 	}
 
 	players := Players{}
 	players.Parse(input)
-	if err != nil {
-		t.Fatalf("Error parsing players: '%v'", err)
-	}
 
 	if len(players) != 3 {
 		t.Errorf("Expected 1 player, got '%d'", len(players))
@@ -77,32 +111,24 @@ func TestParsePlayers(t *testing.T) {
 		t.Errorf("Expected for 1 player in Lobby but '%t'", players[0].Lobby)
 	}
 
-	geoDB, err := geoip2.Open("GeoLite2-Country.mmdb")
-	if err != nil {
-		t.Errorf("Cant open GeoDB %e", err)
-	}
-	defer geoDB.Close()
-
-	players.SetCountryCode(geoDB)
+	geoDB := loadGeoOrSkip(t)
+	players.SetGeo(geoDB)
 	if players[1].Country != "US" {
 		t.Errorf("Expected for 1 player 'US' country but got '%s'", players[1].Country)
 	}
 
-	PrintJSON("Players", players)
+	printJSON("Players", players)
 }
 
 // TestParseAdmins tests the ParseAdmins function.
 func TestParseAdmins(t *testing.T) {
-	input, err := LoadTestData("admins.txt")
+	input, err := loadTestData("admins.txt")
 	if err != nil {
 		t.Fatalf("Failed to load admins test data: %v", err)
 	}
 
 	admins := Admins{}
 	admins.Parse(input)
-	if err != nil {
-		t.Fatalf("Error parsing admins: %v", err)
-	}
 
 	if len(admins) != 3 {
 		t.Errorf("Expected 1 admin, got %d", len(admins))
@@ -123,32 +149,24 @@ func TestParseAdmins(t *testing.T) {
 		t.Errorf("Expected admin IP to be '8.8.8.8:1', got '%s:%d'", admins[2].IP, admins[2].Port)
 	}
 
-	geoDB, err := geoip2.Open("GeoLite2-Country.mmdb")
-	if err != nil {
-		t.Errorf("Cant open GeoDB %e", err)
-	}
-	defer geoDB.Close()
-
-	admins.SetCountryCode(geoDB)
+	geoDB := loadGeoOrSkip(t)
+	admins.SetGeo(geoDB)
 	if admins[1].Country != "XX" {
 		t.Errorf("Expected for 1 admin 'XX' country but got '%s'", admins[1].Country)
 	}
 
-	PrintJSON("Admins", admins)
+	printJSON("Admins", admins)
 }
 
 // TestParseBans tests the ParseBans function.
 func TestParseBans(t *testing.T) {
-	input, err := LoadTestData("bans.txt")
+	input, err := loadTestData("bans.txt")
 	if err != nil {
 		t.Fatalf("Failed to load bans test data: %v", err)
 	}
 
 	bans := Bans{}
 	bans.Parse(input)
-	if err != nil {
-		t.Fatalf("Error parsing bans: %v", err)
-	}
 
 	if len(bans.GUIDBans) != 3 {
 		t.Errorf("Expected 3 GUID bans, got %d", len(bans.GUIDBans))
@@ -176,16 +194,45 @@ func TestParseBans(t *testing.T) {
 		t.Errorf("Expected 3 IP ban to be invalid, got '%t'", bans.IPBans[0].Valid)
 	}
 
-	geoDB, err := geoip2.Open("GeoLite2-Country.mmdb")
-	if err != nil {
-		t.Errorf("Cant open GeoDB %e", err)
-	}
-	defer geoDB.Close()
-
-	bans.SetCountryCode(geoDB)
+	geoDB := loadGeoOrSkip(t)
+	bans.SetGeo(geoDB)
 	if bans.IPBans[1].Country != "US" {
 		t.Errorf("Expected for 1 admin 'US' country but got '%s'", bans.IPBans[1].Country)
 	}
 
-	PrintJSON("Bans", bans)
+	printJSON("Bans", bans)
+}
+
+func Test_parseAddress(t *testing.T) {
+	cases := []struct {
+		in   string
+		ip   string
+		port uint16
+	}{
+		{"127.0.0.1:1234", "127.0.0.1", 1234},
+		{" 8.8.8.8:53 ", "8.8.8.8", 53},
+		{"bad:port", "invalid", 0},
+		{"10.0.0.1", "10.0.0.1", 0},
+		{"nope", "invalid", 0},
+	}
+
+	for _, c := range cases {
+		ip, port := parseAddress(c.in)
+		if ip != c.ip || port != c.port {
+			t.Errorf("parseAddress(%q) = %q,%d; want %q,%d",
+				c.in, ip, port, c.ip, c.port)
+		}
+	}
+}
+
+func Test_getMinutes(t *testing.T) {
+	cases := map[string]int{
+		"perm": -1, "-": 0, "0": 0, "15": 15, "x": 0,
+	}
+
+	for in, want := range cases {
+		if got := getMinutes(in); got != want {
+			t.Errorf("getMinutes(%q)=%d; want %d", in, got, want)
+		}
+	}
 }

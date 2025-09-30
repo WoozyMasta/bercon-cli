@@ -5,13 +5,13 @@ import (
 	"strings"
 )
 
-// Bans represents a structure for all types of bans.
+// Bans aggregates GUID and IP bans as parsed from the "bans" command output.
 type Bans struct {
 	GUIDBans BansGUID `json:"guid_bans"`
 	IPBans   BansIP   `json:"ip_bans"`
 }
 
-// BanGUID represents a GUID ban entry.
+// BanGUID represents a single GUID ban entry.
 type BanGUID struct {
 	GUID        string `json:"guid"`
 	Reason      string `json:"reason"`
@@ -20,20 +20,24 @@ type BanGUID struct {
 	Valid       bool   `json:"valid"`
 }
 
-// BansGUID represents a []BanGUID list.
+// BansGUID is a slice of BanGUID.
 type BansGUID []BanGUID
 
-// BanIP represents an IP ban entry.
+// BanIP represents a single IP ban entry. Geolocation fields are optional
+// and are filled by SetGeo/SetCountryCode if a GeoIP database is provided.
 type BanIP struct {
-	IP          string `json:"ip"`
-	Reason      string `json:"reason"`
-	Country     string `json:"country,omitempty"`
-	ID          int    `json:"id"`
-	MinutesLeft int    `json:"minutes"`
-	Valid       bool   `json:"valid"`
+	IP          string  `json:"ip"`
+	Reason      string  `json:"reason"`
+	Country     string  `json:"country,omitempty"`
+	City        string  `json:"city,omitempty"`
+	Latitude    float64 `json:"lat,omitempty"`
+	Longitude   float64 `json:"lon,omitempty"`
+	ID          int     `json:"id"`
+	MinutesLeft int     `json:"minutes"`
+	Valid       bool    `json:"valid"`
 }
 
-// BansIP represents a []BanIP list.
+// BansIP is a slice of BanIP.
 type BansIP []BanIP
 
 const (
@@ -48,12 +52,13 @@ const (
 	bansIPStartString   = "IP Bans:"
 )
 
-// Create new Bans
+// NewBans returns an empty Bans struct.
 func NewBans() *Bans {
 	return &Bans{}
 }
 
-// ParseBans parses the ban section of the input.
+// Parse populates the Bans struct (GUID and IP sections) from the plaintext
+// BattlEye response of the "bans" command.
 func (b *Bans) Parse(data []byte) {
 	lines := strings.Split(string(data), "\n")
 
@@ -77,12 +82,12 @@ func (b *Bans) Parse(data []byte) {
 	}
 }
 
-// Create new BansGUID
+// NewBansGUID returns an empty BansGUID slice.
 func NewBansGUID() *BansGUID {
 	return &BansGUID{}
 }
 
-// Parse GUID bans data
+// Parse fills the BansGUID slice from the GUID bans section of the response.
 func (b *BansGUID) Parse(lines []string) {
 	for i := 0; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])
@@ -131,12 +136,13 @@ func (b *BansGUID) Parse(lines []string) {
 	}
 }
 
-// Create new BansIP
+// NewBansIP returns an empty BansIP slice.
 func NewBansIP() *BansIP {
 	return &BansIP{}
 }
 
-// Parse IP bans data
+// Parse fills the BansIP slice from the IP bans section of the response.
+// guidCount is used to keep IDs contiguous across GUID and IP sections.
 func (b *BansIP) Parse(lines []string, guidCount int) {
 	for i := 0; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])

@@ -2,17 +2,20 @@ package beparser
 
 import "strings"
 
-// All other responses
+// Messages holds unstructured command output split into lines. It is
+// returned by Parse for commands that do not have a dedicated parser.
 type Messages struct {
 	Msg []string `json:"msg"`
 }
 
-// Create new Messages struct
+// NewMessage returns an empty Messages value.
 func NewMessage() *Messages {
 	return &Messages{}
 }
 
-// Split other not parsable response to lines in Messages struct
+// Parse splits arbitrary response data into lines. The BE server often
+// replies with an empty line for successful actions; in that case "OK"
+// is used as a single line placeholder.
 func (m *Messages) Parse(data []byte) {
 	lines := strings.Split(string(data), "\n")
 

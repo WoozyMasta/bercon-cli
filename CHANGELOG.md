@@ -17,22 +17,31 @@ and this project adheres to [Semantic Versioning][].
 
 ### Added
 
-* Printer now supports multiple output formats via `--format`: `table`, `json`, `plain`, `md`, `html`.
-* Markdown/HTML rendering for tables using go-pretty.
-* Geo enrichment now includes `city`, `lat`, `lon` (when City DB is available); graceful fallback to Country DB.
-* Makefile targets for cross-build & SBOM; `geodb` helper to fetch GeoLite2 databases.
-* Composite GitHub Action to run local `make tools` & `make check`; release workflow using `make release`.
+* CLI: new `--format` flag (`table`, `json`, `plain`, `md`, `html`).
+* printer: pretty tables via go-pretty
+* printer: Markdown/HTML rendering
+* beparser: geo enrichment: `country`, `city`, `lat`, `lon`.
+* bercon: duration-based setters and getters (`SetKeepalive`, `Keepalive`,
+  `SetDeadline`, `Deadline`, `SetMicroSleep`, `MicroSleep`).
+* Makefile (release matrix, winres patch, SBOM)
 
 ### Changed
 
-* CLI: `--json` is **deprecated** (kept for compatibility). Use `--format=json`.
-* `beparser`: new `SetGeo` API; legacy `SetCountryCode` retained for backward compatibility.
+* bercon: rewritten manager/reader loops for robustness
+* bercon: strict multipart assembly
+* bercon: protocol checks
+* bercon: normalized errors
+* bercon: enforced CRC/header validation
+* bercon: max command body limit
+* printer: unified rendering via `ParseAndPrintData(w, ...)`
+* printer: table captions with totals.
 
-### Fixed
+### Migration Notes
 
-* Strict protocol limits in RCON client (max command size); header/CRC validation paths hardened.
-* `parseAddress` properly trims and parses ports with surrounding spaces.
-* Robust multipart response assembly & sequencing.
+* JSON consumers should be aware of new fields `city`, `lat`, `lon`
+  (additive, non-breaking).
+* CLI `--json` remains supported for backward compatibility;
+  prefer `--format=json`.
 
 [0.4.0]: https://github.com/WoozyMasta/bercon-cli/compare/v0.3.1...v0.4.0
 

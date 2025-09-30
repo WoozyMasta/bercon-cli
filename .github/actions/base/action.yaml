@@ -9,26 +9,46 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Run ShellCheck
-      uses: ludeeus/action-shellcheck@master
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ inputs.go-version }}
+        check-latest: true
+        cache: false
+
+    - name: Cache Go build & mod
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ inputs.go-version }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-${{ inputs.go-version }}-
+          ${{ runner.os }}-go-
+
+    - name: Cache golangci-lint cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/golangci-lint
+        key: ${{ runner.os }}-golangci-${{ inputs.go-version }}-${{ hashFiles('**/*.go') }}
+        restore-keys: |
+          ${{ runner.os }}-golangci-${{ inputs.go-version }}-
+          ${{ runner.os }}-golangci-
 
     - name: Run MarkdownLint
       uses: DavidAnson/markdownlint-cli2-action@v18
       with:
         globs: "**/*.md"
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ inputs.go-version }}
+    - name: Install dev tools (make tools)
+      shell: bash
+      run: make tools
+      env:
+        GOWORK: off
 
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v6
-      with:
-        version: v1.60
-
-    # for windows can use betteralign ./...
-    - name: Check Golang structures
-      uses: essentialkaos/aligo-action@v2
-      with:
-        files: ./...
+    - name: Run checks (make check)
+      shell: bash
+      run: make check
+      env:
+        GOWORK: off

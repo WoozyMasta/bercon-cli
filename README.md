@@ -55,15 +55,16 @@ Usage:
 BattlEye RCon CLI.
 
 Application Options:
-  -i, --ip=          Server IPv4 address (default: 127.0.0.1) [$BERCON_ADDRESS]
-  -P, --password=    Server RCON password [$BERCON_PASSWORD]
-  -g, --geo-db=      Path to Country GeoDB mmdb file [$BERCON_GEO_DB]
-  -p, --port=        Server RCON port (default: 2305) [$BERCON_PORT]
-  -t, --timeout=     Deadline and timeout in seconds (default: 3) [$BERCON_TIMEOUT]
-  -b, --buffer-size= Buffer size for RCON connection (default: 1024) [$BERCON_BUFFER_SIZE]
-  -j, --json         Print result in JSON format [$BERCON_JSON_OUTPUT]
-  -h, --help         Show version, commit, and build time
-  -v, --version      Prints this help message
+  -i, --ip=                             Server IPv4 address (default: 127.0.0.1) [$BERCON_ADDRESS]
+  -P, --password=                       Server RCON password [$BERCON_PASSWORD]
+  -g, --geo-db=                         Path to Country GeoDB mmdb file [$BERCON_GEO_DB]
+  -p, --port=                           Server RCON port (default: 2305) [$BERCON_PORT]
+  -t, --timeout=                        Deadline and timeout in seconds (default: 3) [$BERCON_TIMEOUT]
+  -b, --buffer-size=                    Buffer size for RCON connection (default: 1024) [$BERCON_BUFFER_SIZE]
+  -f, --format=[json|table|raw|md|html] Output format (default: table) [%BERCON_FORMAT%]
+  -j, --json                            Print result in JSON format (deprecated, use --format=json) [$BERCON_JSON_OUTPUT]
+  -h, --help                            Show version, commit, and build time
+  -v, --version                         Prints this help message
 ```
 
 You can also use environment variables, they are specified in the help in
@@ -125,22 +126,27 @@ BERCON_GEO_DB=/pat/to/GeoLite2-Country.mmdb BERCON_PASSWORD='myPass' bercon-cli 
 Below are examples of responses:
 
 ```txt
-Players on server:
-[#]  [IP Address]:[Port]    [Ping]  [GUID]                            [Name]                  [Country]
----------------------------------------------------------------------------------------------------------
-0    175.78.137.224:46534   33      20501A3C348F41D8B7AC3F4D1BB2B11C  Avtonom Fedenko         CN       
-1    162.47.104.77:45539    298     A3333BB4AFBC64F07F1FA0C6C09E6746  Svitlogor Zelinka       US       
-2    99.245.38.37:31924     156     8DA159D526C95D590303BF5DE422D044  Budislav Dovgalyuk      CA       
-3    181.238.97.213:37703   285     DA55E95D18536F77A14C0EC70562CB20  Sergiy Filevich         AR       
-4    213.242.6.7:29653      274     090B1EAD1075519FC30942580067EB48  Vernislav Moyseienko    RU       
-5    14.186.90.206:48687    16      2E1589F4CF2E3EF553A4DA9F6C2ADB4C  Radimir Sosnovskiy      VN       
-6    241.66.187.25:40056    198     D5D648188992BB7B4994451E70F71558  Sobislav Peleshchishin  XX       
-7    5.252.240.44:48936     227     256D87ED2B7D0ADB664B372C297E1B4D  Virodan Bogovin         IT       
-8    172.148.115.119:32793  141     799B37118AC27D5C345092069DAFE8B2  Gostomisl Yaskevich     GB       
-9    39.127.252.69:44989    106     CFBAC3F0F22C492FA238D9ED159F3E6C  Vodogray Zhigalko       KR       
-10   125.202.166.119:31839  277     ADD6FEB25F352F0F6C01F0731E49EF43  Toligniv Doshchenko     JP       
-(11 players in total)
-PASS
+╭─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Players on server (15 in total)                                                                                                                     │
+├────┬───────────────────────┬──────┬──────────────────────────────────┬────────────────────────┬─────────┬──────────────────┬───────────┬────────────┤
+│  # │ IP:Port               │ Ping │ GUID                             │ Name                   │ Country │ City             │ Lat       │ Lon        │
+├────┼───────────────────────┼──────┼──────────────────────────────────┼────────────────────────┼─────────┼──────────────────┼───────────┼────────────┤
+│  0 │ 175.78.137.224:46534  │   33 │ 20501A3C348F41D8B7AC3F4D1BB2B11C │ Avtonom Fedenko        │ CN      │                  │ 34.77320  │ 113.72200  │
+│  1 │ 99.245.38.37:31924    │  156 │ 8DA159D526C95D590303BF5DE422D044 │ Budislav Dovgalyuk     │ CA      │ Mississauga      │ 43.56390  │ -79.71720  │
+│  2 │ 213.242.6.7:29653     │  274 │ 090B1EAD1075519FC30942580067EB48 │ Vernislav Moyseienko   │ RU      │ Teykovo          │ 56.85650  │ 40.53460   │
+│  3 │ 14.186.90.206:48687   │   16 │ 2E1589F4CF2E3EF553A4DA9F6C2ADB4C │ Radimir Sosnovskiy     │ VN      │ Ho Chi Minh City │ 10.82200  │ 106.62570  │
+│  4 │ 5.64.182.98:33898     │  272 │ EE77B327B8ADB31B15F058FD9DAA13BD │ Ladolyub Semchuk       │ GB      │ Plymouth         │ 50.39070  │ -4.06020   │
+│  5 │ 109.137.98.204:49085  │  185 │ BF14CC820DAA9BB3293DE24FBE75E7F8 │ Osemrit Fesun          │ BE      │ Antwerp          │ 51.21920  │ 4.39170    │
+│  6 │ 135.18.149.138:23544  │  282 │ 8A9A96D2FA5466CB8BAA5951711FE028 │ Ulichan Venislavskiy   │ US      │ Chicago          │ 41.88350  │ -87.63050  │
+│  7 │ 42.59.192.137:49326   │  243 │ 3C32AC2FF50AE08EF000D7E88CDE0C47 │ Snovid Poloviy         │ CN      │                  │ 34.77320  │ 113.72200  │
+│  8 │ 213.229.129.71:25891  │  235 │ 062E3F4183B90DA6534AA738FB4CE501 │ Hristofor Kirpan       │ ES      │ Madrid           │ 40.41530  │ -3.69400   │
+│  9 │ 136.152.138.124:21192 │  148 │ 33C81E25895ADCE458AA22F2A55D668A │ Hvalimir Chamata       │ US      │ Berkeley         │ 37.87360  │ -122.25700 │
+│ 10 │ 76.4.61.28:29028      │   94 │ D5F7BC1D4D113C180AE2A6A18C3E40CF │ Solomon Haieckiy       │ US      │                  │ 37.75100  │ -97.82200  │
+│ 11 │ 132.181.34.254:50362  │  120 │ 4F069086BDAB40183121F0CA2F6F7E34 │ Gorun Yashchenko       │ NZ      │ Christchurch     │ -43.52340 │ 172.59900  │
+│ 12 │ 176.247.54.236:46487  │   23 │ 38DF0773821E8D0A1BDAB620981302E8 │ Yarosvit Tobilevich    │ IT      │ Cagliari         │ 39.23020  │ 9.12100    │
+│ 13 │ 5.252.240.44:48936    │  227 │ 256D87ED2B7D0ADB664B372C297E1B4D │ Virodan Bogovin        │ IT      │ Melegnano        │ 45.35690  │ 9.32670    │
+│ 14 │ 2.153.187.194:42007   │  181 │ 796CAA8F77E01D48B2D4E91F156E4387 │ Naslav Mazurok         │ ES      │ Madrid           │ 40.34820  │ -3.69890   │
+╰────┴───────────────────────┴──────┴──────────────────────────────────┴────────────────────────┴─────────┴──────────────────┴───────────┴────────────╯
 ```
 
 ```json

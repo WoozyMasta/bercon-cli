@@ -1,4 +1,5 @@
 {
+  "go.testFlags": ["-v"],
   "go.lintTool": "golangci-lint",
   "go.lintFlags": [
     "--fast"

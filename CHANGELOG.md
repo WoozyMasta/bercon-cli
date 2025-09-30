@@ -13,6 +13,29 @@ and this project adheres to [Semantic Versioning][].
 ### Removed
 -->
 
+## [0.4.0][] - 2025-09-30
+
+### Added
+
+* Printer now supports multiple output formats via `--format`: `table`, `json`, `plain`, `md`, `html`.
+* Markdown/HTML rendering for tables using go-pretty.
+* Geo enrichment now includes `city`, `lat`, `lon` (when City DB is available); graceful fallback to Country DB.
+* Makefile targets for cross-build & SBOM; `geodb` helper to fetch GeoLite2 databases.
+* Composite GitHub Action to run local `make tools` & `make check`; release workflow using `make release`.
+
+### Changed
+
+* CLI: `--json` is **deprecated** (kept for compatibility). Use `--format=json`.
+* `beparser`: new `SetGeo` API; legacy `SetCountryCode` retained for backward compatibility.
+
+### Fixed
+
+* Strict protocol limits in RCON client (max command size); header/CRC validation paths hardened.
+* `parseAddress` properly trims and parses ports with surrounding spaces.
+* Robust multipart response assembly & sequencing.
+
+[0.4.0]: https://github.com/WoozyMasta/bercon-cli/compare/v0.3.1...v0.4.0
+
 ## [0.3.1][] - 2025-01-28
 
 ### Changed

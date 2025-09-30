@@ -1,7 +1,6 @@
 package bercon
 
 import (
-	"bytes"
 	"encoding/binary"
 	"hash/crc32"
 )
@@ -12,13 +11,14 @@ const (
 	loginPacket packetKind = iota
 	commandPacket
 	messagePacket
-	badPacket     packetKind = 0xFF
-	firstByte     byte       = 0x42
-	secondByte    byte       = 0x45
-	lastByte      byte       = 0xFF
-	loginSuccess  byte       = 0x01
-	multipart     byte       = 0x00
-	minPacketSize int        = 8 // 7 header + 1 type + ... payload
+	badPacket      packetKind = 0xFF
+	firstByte      byte       = 0x42
+	secondByte     byte       = 0x45
+	lastByte       byte       = 0xFF
+	loginSuccess   byte       = 0x01
+	multipart      byte       = 0x00
+	minPacketSize  int        = 8 // 7 header + 1 type + ... payload
+	packetOverhead            = 9
 )
 
 /*
@@ -42,12 +42,12 @@ type packet struct {
 	data   []byte     // data
 	header header     // use in all packets
 	kind   packetKind // define type of packet
-	seq    byte       // packet sequence number for command and message packet only
-	pages  byte       // pages count for command packet only
-	page   byte       // page number for command packet only
+	seq    byte       // packet sequence number (for command/message)
+	pages  byte       // total pages (command multipart)
+	page   byte       // page index (command multipart)
 }
 
-// make packet
+// make initializes fields; header/CRC are computed in toBytes().
 func (p *packet) make(data []byte, kind packetKind, seq byte) {
 	p.kind = kind
 	p.data = data
@@ -55,110 +55,76 @@ func (p *packet) make(data []byte, kind packetKind, seq byte) {
 	if kind != loginPacket {
 		p.seq = seq
 	}
-
-	p.setHeader()
-}
-
-// get CRC for packet body
-func (p *packet) getCRC() uint32 {
-	var crcData []byte
-
-	switch p.kind {
-	case loginPacket:
-		crcData = append([]byte{p.header.end, byte(p.kind)}, p.data...)
-
-	case commandPacket:
-		if p.pages == 0 {
-			crcData = append([]byte{p.header.end, byte(p.kind), p.seq}, p.data...)
-		} else {
-			crcData = append([]byte{p.header.end, byte(p.kind), p.seq, multipart, p.pages, p.page}, p.data...)
-		}
-
-	case messagePacket:
-		crcData = append([]byte{p.header.end, byte(p.kind), p.seq}, p.data...)
-	}
-
-	return crc32.ChecksumIEEE(crcData)
 }
 
 // check CRC packet header
-func (p *packet) checkCRC() error {
-	if binary.LittleEndian.Uint32(p.header.crc[:]) != p.getCRC() {
+func (p *packet) checkCRC(raw []byte) error {
+	got := binary.LittleEndian.Uint32(p.header.crc[:])
+	want := crc32.ChecksumIEEE(raw[6:])
+	if got != want {
 		return ErrPacketCRC
 	}
 
 	return nil
 }
 
-// set header for packet
-func (p *packet) setHeader() {
-	p.header.be = [2]byte{firstByte, secondByte}
-	p.header.end = lastByte
-	binary.LittleEndian.PutUint32(p.header.crc[:], p.getCRC())
-}
-
-// parse packet to bytes
+// toBytes builds the packet with a single allocation and computes CRC over out[6:].
 func (p *packet) toBytes() ([]byte, error) {
-	buf := new(bytes.Buffer)
-	enc := binary.LittleEndian
-
-	if err := binary.Write(buf, enc, p.header.be); err != nil {
-		return nil, err
-	}
-	if err := binary.Write(buf, enc, p.header.crc); err != nil {
-		return nil, err
-	}
-	if err := binary.Write(buf, enc, p.header.end); err != nil {
-		return nil, err
-	}
-	if err := binary.Write(buf, enc, p.kind); err != nil {
-		return nil, err
+	// Compute length: 7(header) + 1(kind) + seq? + multipart hdr? + len(data)
+	// header layout: [0]='B', [1]='E', [2..5]=CRC, [6]=0xFF
+	extra := 0
+	if p.kind != loginPacket {
+		extra++ // seq
 	}
 
-	switch p.kind {
-	case loginPacket:
-		break
-
-	case commandPacket:
-		if err := binary.Write(buf, enc, p.seq); err != nil {
-			return nil, err
-		}
-		if p.pages != 0 { // multipart packet processing
-			if err := binary.Write(buf, enc, multipart); err != nil {
-				return nil, err
-			}
-			if err := binary.Write(buf, enc, p.pages); err != nil {
-				return nil, err
-			}
-			if err := binary.Write(buf, enc, p.page); err != nil {
-				return nil, err
-			}
-		}
-
-	case messagePacket:
-		if err := binary.Write(buf, enc, p.seq); err != nil {
-			return nil, err
-		}
-
-	default:
-		return nil, ErrPacketUnknown
+	if p.kind == commandPacket && p.pages != 0 {
+		extra += 3 // multipart header: 0x00, pages, page
 	}
 
-	if err := binary.Write(buf, enc, p.data); err != nil {
-		return nil, err
+	total := 7 + 1 + extra + len(p.data)
+	out := make([]byte, total)
+
+	// magic header
+	out[0] = firstByte
+	out[1] = secondByte
+	out[6] = lastByte
+
+	// kind
+	i := 7
+	out[i] = byte(p.kind)
+	i++
+
+	// seq / multipart header
+	if p.kind != loginPacket {
+		out[i] = p.seq
+		i++
 	}
 
-	data := buf.Bytes()
-	if err := checkPacket(data); err != nil {
+	if p.kind == commandPacket && p.pages != 0 {
+		out[i+0] = multipart
+		out[i+1] = p.pages
+		out[i+2] = p.page
+		i += 3
+	}
+
+	// payload
+	copy(out[i:], p.data)
+
+	// CRC over bytes from index 6 (0xFF) to the end
+	sum := crc32.ChecksumIEEE(out[6:])
+	binary.LittleEndian.PutUint32(out[2:6], sum)
+
+	// quick header validation (cheap)
+	if err := checkPacket(out); err != nil {
 		return nil, err
 	}
 
-	return data, nil
+	return out, nil
 }
 
-// check packet valid
+// checkPacket validates fixed header bytes and minimum size.
 func checkPacket(data []byte) error {
-	if len(data) < minPacketSize { // 7 header + 1 type
+	if len(data) < minPacketSize { // 7 header + 1 kind
 		return ErrPacketSize
 	}
 
@@ -169,65 +135,80 @@ func checkPacket(data []byte) error {
 	return nil
 }
 
-// make packet from bytes
-func fromBytes(data []byte) (*packet, error) {
-	if err := checkPacket(data); err != nil {
+// fromBytes parses the raw bytes into packet struct with minimal allocations.
+// It copies only the payload into p.data; header and small fields are read by index.
+func fromBytes(raw []byte) (*packet, error) {
+	if err := checkPacket(raw); err != nil {
 		return nil, err
 	}
 
+	// parse header
 	p := new(packet)
-	buf := bytes.NewReader(data)
-	enc := binary.LittleEndian
+	copy(p.header.be[:], raw[0:2])
+	copy(p.header.crc[:], raw[2:6])
+	p.header.end = raw[6]
 
-	if err := binary.Read(buf, enc, &p.header.be); err != nil {
+	// verify CRC over raw[6:]
+	if err := p.checkCRC(raw); err != nil {
 		return nil, err
 	}
-	if err := binary.Read(buf, enc, &p.header.crc); err != nil {
-		return nil, err
-	}
-	if err := binary.Read(buf, enc, &p.header.end); err != nil {
-		return nil, err
-	}
-	if err := binary.Read(buf, enc, &p.kind); err != nil {
-		return nil, err
-	}
+
+	// parse kind and body
+	i := 7
+	p.kind = packetKind(raw[i])
+	i++
 
 	switch p.kind {
 	case loginPacket:
-		break
+		// payload is the rest
 
 	case commandPacket:
-		if err := binary.Read(buf, enc, &p.seq); err != nil {
-			return nil, err
+		// seq
+		if i >= len(raw) {
+			return nil, ErrPacketSize
 		}
-		if len(data) >= minPacketSize+2 && data[minPacketSize+1] == multipart { // multipart packet processing
-			if _, err := buf.ReadByte(); err != nil { // read unused delimiter
-				return nil, err
+
+		p.seq = raw[i]
+		i++
+
+		// optional multipart header
+		// after kind(1)+seq(1), next byte may be 0x00 => multipart
+		if i < len(raw) && raw[i] == multipart {
+			if i+3 > len(raw) {
+				return nil, ErrPacketSize
 			}
-			if err := binary.Read(buf, enc, &p.pages); err != nil {
-				return nil, err
-			}
-			if err := binary.Read(buf, enc, &p.page); err != nil {
-				return nil, err
-			}
+
+			// consume delimiter + pages + page
+			i++
+			p.pages = raw[i]
+			i++
+			p.page = raw[i]
+			i++
 		}
 
 	case messagePacket:
-		if err := binary.Read(buf, enc, &p.seq); err != nil {
-			return nil, err
+		// seq
+		if i >= len(raw) {
+			return nil, ErrPacketSize
 		}
+		p.seq = raw[i]
+		i++
 
 	default:
 		return nil, ErrPacketUnknown
 	}
 
-	p.data = make([]byte, buf.Len())
-	if err := binary.Read(buf, enc, &p.data); err != nil {
-		return nil, err
+	// copy payload (avoid retaining the large read buffer)
+	if i > len(raw) {
+		return nil, ErrPacketSize
 	}
 
-	if err := p.checkCRC(); err != nil {
-		return nil, err
+	n := len(raw) - i
+	if n > 0 {
+		p.data = make([]byte, n)
+		copy(p.data, raw[i:])
+	} else {
+		p.data = nil
 	}
 
 	return p, nil

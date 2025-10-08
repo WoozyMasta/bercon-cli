@@ -13,6 +13,17 @@ and this project adheres to [Semantic Versioning][].
 ### Removed
 -->
 
+## [0.4.1][] - 2025-10-08
+
+### Added
+
+* `--beserver-cfg` (`-r`) option and `BERCON_SERVER_CFG` env var to
+  auto-load RConIP, RConPort, and RConPassword from `beserver_x64*.cfg`.
+  Supports both file and directory paths,
+  automatically picks active or latest config.
+
+[0.4.1]: https://github.com/WoozyMasta/bercon-cli/compare/v0.4.0...v0.4.1
+
 ## [0.4.0][] - 2025-09-30
 
 ### Added

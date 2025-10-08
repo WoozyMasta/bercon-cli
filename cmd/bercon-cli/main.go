@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/jessevdk/go-flags"
+	"github.com/woozymasta/bercon-cli/internal/config"
 	"github.com/woozymasta/bercon-cli/internal/printer"
 	"github.com/woozymasta/bercon-cli/internal/vars"
 	"github.com/woozymasta/bercon-cli/pkg/bercon"
@@ -17,6 +18,7 @@ import (
 type Options struct {
 	IP       string `short:"i" long:"ip"          description:"Server IPv4 address" default:"127.0.0.1" env:"BERCON_ADDRESS"`
 	Password string `short:"P" long:"password"    description:"Server RCON password" env:"BERCON_PASSWORD"`
+	BeCfg    string `short:"r" long:"server-cfg"  description:"Path to beserver_x64.cfg file or directory to search beserver_x64*.cfg" env:"BERCON_SERVER_CFG"`
 	GeoDB    string `short:"g" long:"geo-db"      description:"Path to Country GeoDB mmdb file" env:"BERCON_GEO_DB"`
 	Format   string `short:"f" long:"format"      description:"Output format" choice:"json" choice:"table" choice:"raw" choice:"md" choice:"html" default:"table" env:"BERCON_FORMAT"`
 	Port     int    `short:"p" long:"port"        description:"Server RCON port" default:"2305" env:"BERCON_PORT"`
@@ -47,6 +49,17 @@ func main() {
 	if opts.Version {
 		vars.Print()
 		return
+	}
+
+	if opts.BeCfg != "" {
+		rc, err := config.LoadFromBeServerCfg(opts.BeCfg)
+		if err != nil {
+			fatalf("beserver cfg: %v\n", err)
+		}
+
+		opts.IP = rc.IP
+		opts.Port = rc.Port
+		opts.Password = rc.Password
 	}
 
 	if opts.Password == "" {
@@ -91,6 +104,6 @@ func main() {
 }
 
 func fatalf(format string, a ...any) {
-	fmt.Fprintf(os.Stderr, format, a...)
+	fmt.Fprintf(os.Stderr, format+"\n", a...)
 	os.Exit(1)
 }

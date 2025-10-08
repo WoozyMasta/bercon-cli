@@ -20,15 +20,10 @@ check out the full list of games on the [BattlEye][] website
 
 You can download the latest version of the programme by following the links:
 
-* [MacOS arm64][]
-* [MacOS amd64][]
-* [Linux i386][]
-* [Linux amd64][]
-* [Linux arm][]
-* [Linux arm64][]
-* [Windows i386][]
-* [Windows amd64][]
-* [Windows arm64][]
+|  Arch/OS  |      MacOS      |      Linux      |      Windows      |
+| --------- | --------------- | --------------- | ----------------- |
+| **AMD64** | [MacOS amd64][] | [Linux amd64][] | [Windows amd64][] |
+| **ARM64** | [MacOS arm64][] | [Linux arm64][] | [Windows arm64][] |
 
 For Linux you can also use the command
 
@@ -57,6 +52,7 @@ BattlEye RCon CLI.
 Application Options:
   -i, --ip=                             Server IPv4 address (default: 127.0.0.1) [$BERCON_ADDRESS]
   -P, --password=                       Server RCON password [$BERCON_PASSWORD]
+  -r, --server-cfg=                     Path to beserver_x64.cfg file or directory to search beserver_x64*.cfg [$BERCON_SERVER_CFG]
   -g, --geo-db=                         Path to Country GeoDB mmdb file [$BERCON_GEO_DB]
   -p, --port=                           Server RCON port (default: 2305) [$BERCON_PORT]
   -t, --timeout=                        Deadline and timeout in seconds (default: 3) [$BERCON_TIMEOUT]
@@ -67,9 +63,16 @@ Application Options:
   -v, --version                         Prints this help message
 ```
 
-You can also use environment variables, they are specified in the help in
+You can use environment variables, they are specified in the help in
 square brackets `[]`, and are also listed in the file
 [example.env](example.env)
+
+RCON connection parameters (`RConIP`, `RConPort`, `RConPassword`)
+from the `beserver_x64*.cfg` file used by BattlEye.  
+To do this, specify the file or directory path with the `--beserver-cfg`
+(`-r`) option or the environment variable `BERCON_SERVER_CFG`.
+If a directory is specified, the tool will automatically find the active
+or latest config file (e.g. `beserver_x64_active_*.cfg`).
 
 ## Usage Examples
 
@@ -81,11 +84,16 @@ BERCON_PASSWORD=myPass BERCON_PORT=2306 bercon-cli players
 BERCON_PASSWORD=myPass bercon-cli -p 2306 players
 ```
 
-The argument value has the highest priority over the environment variable
+The argument value has the highest priority over the environment variable,
+but the BattlEye config overrides both.
 
 ```bash
-# pas$$word will be used
+# password from arg will be used
 BERCON_PASSWORD='strong' bercon-cli --password 'pas$$word' players
+# password from config will be used
+BERCON_PASSWORD='strong' bercon-cli -r beserver_x64.cfg players
+# password from config will be used
+BERCON_PASSWORD='strong' bercon-cli -P 'pas$$word' -r beserver_x64.cfg players
 ```
 
 You can pass multiple commands within a single context.
@@ -258,10 +266,7 @@ Your support is greatly appreciated!
 [BERConProtocol]: pkg/bercon/spec/bercon-protocol.md "BattlEye RCON Protocol Specification"
 [MacOS arm64]: https://github.com/WoozyMasta/bercon-cli/releases/latest/download/bercon-cli-darwin-arm64 "MacOS arm64 file"
 [MacOS amd64]: https://github.com/WoozyMasta/bercon-cli/releases/latest/download/bercon-cli-darwin-amd64 "MacOS amd64 file"
-[Linux i386]: https://github.com/WoozyMasta/bercon-cli/releases/latest/download/bercon-cli-linux-386 "Linux i386 file"
 [Linux amd64]: https://github.com/WoozyMasta/bercon-cli/releases/latest/download/bercon-cli-linux-amd64 "Linux amd64 file"
-[Linux arm]: https://github.com/WoozyMasta/bercon-cli/releases/latest/download/bercon-cli-linux-arm "Linux arm file"
 [Linux arm64]: https://github.com/WoozyMasta/bercon-cli/releases/latest/download/bercon-cli-linux-arm64 "Linux arm64 file"
-[Windows i386]: https://github.com/WoozyMasta/bercon-cli/releases/latest/download/bercon-cli-windows-386.exe "Windows i386 file"
 [Windows amd64]: https://github.com/WoozyMasta/bercon-cli/releases/latest/download/bercon-cli-windows-amd64.exe "Windows amd64 file"
 [Windows arm64]: https://github.com/WoozyMasta/bercon-cli/releases/latest/download/bercon-cli-windows-arm64.exe "Windows arm64 file"

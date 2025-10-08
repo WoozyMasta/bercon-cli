@@ -47,18 +47,29 @@ bercon-cli --help
 Usage:
   bercon-cli [OPTIONS] command [command, command, ...]
 
-BattlEye RCon CLI.
+BattlEye RCon CLI — command-line tool for interacting with BattlEye RCON servers (used by DayZ, Arma 2/3, etc).
+It allows executing server commands, reading responses, and formatting results in table, JSON, Markdown, or HTML.
+
+Configuration can be provided via:
+- CLI flags
+- Environment variables
+- RC config file (INI) with globals and profiles
+- beserver_x64*.cfg — to auto-load RConIP, RConPort and RConPassword
 
 Application Options:
   -i, --ip=                             Server IPv4 address (default: 127.0.0.1) [$BERCON_ADDRESS]
   -P, --password=                       Server RCON password [$BERCON_PASSWORD]
+  -c, --config=                         Path to rc file (INI). If not set, standard locations are used [$BERCON_CONFIG]
+  -n, --profile=                        Profile name from rc file [$BERCON_PROFILE]
   -r, --server-cfg=                     Path to beserver_x64.cfg file or directory to search beserver_x64*.cfg [$BERCON_SERVER_CFG]
   -g, --geo-db=                         Path to Country GeoDB mmdb file [$BERCON_GEO_DB]
+  -f, --format=[json|table|raw|md|html] Output format (default: table) [$BERCON_FORMAT]
   -p, --port=                           Server RCON port (default: 2305) [$BERCON_PORT]
   -t, --timeout=                        Deadline and timeout in seconds (default: 3) [$BERCON_TIMEOUT]
   -b, --buffer-size=                    Buffer size for RCON connection (default: 1024) [$BERCON_BUFFER_SIZE]
-  -f, --format=[json|table|raw|md|html] Output format (default: table) [%BERCON_FORMAT%]
   -j, --json                            Print result in JSON format (deprecated, use --format=json) [$BERCON_JSON_OUTPUT]
+  -l, --list-profiles                   List profiles from rc file and exit
+  -e, --example                         Print example rc (INI) config and exit
   -h, --help                            Show version, commit, and build time
   -v, --version                         Prints this help message
 ```
@@ -113,6 +124,73 @@ You can use json output for further processing
 bercon-cli -p 2306 -P myPass -j players | jq -er .
 ```
 
+## Profiles config (INI)
+
+`bercon-cli` supports reusable configuration profiles stored in an INI file,
+allowing you to define multiple RCON connections and global defaults.
+
+The tool automatically looks for an RC config file in platform-specific
+locations if `--config` (`-c`) is not provided:
+
+* **Linux/BSD:**
+  `~/.config/bercon-cli/config.ini`,
+  `~/.bercon-cli.ini`
+* **macOS:**
+  `~/Library/Application Support/bercon-cli/config.ini`,
+  plus Linux paths
+* **Windows:** `%APPDATA%\bercon-cli\config.ini`,
+  `%USERPROFILE%\.config\bercon-cli\config.ini`,
+  `%USERPROFILE%\.bercon-cli.ini`
+
+Configuration priority (lowest -> highest):
+
+```txt
+RC [globals] -> RC [profile.*] -> Environment -> CLI flags -> beserver_x64*.cfg
+```
+
+If a profile specifies `server_cfg`, it overrides `ip`, `port`, and `password`
+with values parsed from the active `beserver_x64*.cfg`.
+
+### Example `config.ini`
+
+```ini
+[globals]
+ip = 127.0.0.1
+port = 2305
+password = MyDefaultPass
+geo_db = /srv/geoip/GeoLite2-Country.mmdb
+format = table
+timeout = 3
+buffer_size = 1024
+
+[profile.dayz-local]
+# Load BattlEye RCon params automatically from beserver_x64*.cfg
+server_cfg = /home/dayz/server/battleye
+format = json
+
+[profile.dayz-eu]
+ip = 192.168.1.55
+port = 2310
+password = strongPass
+
+[profile.arma3-test]
+server_cfg = C:\Games\Arma3Server\battleye
+timeout = 5
+```
+
+### Usage examples
+
+```bash
+# Use a profile from the default config locations
+bercon-cli --profile dayz-local players
+# Explicitly specify a config file
+bercon-cli --config ~/.config/bercon-cli/config.ini -n arma3-test players
+# List all profiles with resolved IP/Port
+bercon-cli --list-profiles
+# Print example config
+bercon-cli --example
+```
+
 ## Geo IP
 
 If you specify the path to the GeoIP city database in `mmdb` format,
@@ -160,13 +238,16 @@ Below are examples of responses:
 ```json
 [
   {
-    "ip": "175.78.137.224",
-    "guid": "20501A3C348F41D8B7AC3F4D1BB2B11C",
-    "name": "Avtonom Fedenko",
-    "country": "CN",
-    "port": 46534,
+    "ip": "213.229.129.71",
+    "guid": "062E3F4183B90DA6534AA738FB4CE501",
+    "name": "Hristofor Kirpan",
+    "country": "ES",
+    "city": "Madrid",
+    "lat": 40.41530,
+    "lon": -3.69400,
+    "port": 25891,
     "ping": 33,
-    "id": 0,
+    "id": 8,
     "valid": true,
     "lobby": false
   }

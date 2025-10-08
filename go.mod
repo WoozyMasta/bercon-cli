@@ -3,6 +3,7 @@ module github.com/woozymasta/bercon-cli
 go 1.24.2
 
 require (
+	github.com/go-ini/ini v1.67.0
 	github.com/jedib0t/go-pretty/v6 v6.6.8
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/oschwald/geoip2-golang v1.13.0

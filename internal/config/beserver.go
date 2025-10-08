@@ -1,13 +1,3 @@
-// Package config provides helpers for loading BattlEye server configuration.
-//
-// It can automatically detect and parse `beserver_x64*.cfg` files used by
-// BattlEye to extract RCON connection parameters such as RConIP,
-// RConPort, and RConPassword.
-//
-// The LoadFromBeServerCfg function supports both file and directory paths.
-// When a directory is provided, the package will pick an active or latest
-// config file automatically. If RConIP is "0.0.0.0", it will be replaced
-// with "127.0.0.1" for local access compatibility.
 package config
 
 import (

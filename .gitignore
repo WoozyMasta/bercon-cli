@@ -127,3 +127,4 @@ dev.env
 *.mmdb
 *.psd
 beserver_x64*.cfg
+*bercon-cli.ini

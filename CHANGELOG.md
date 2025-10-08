@@ -17,10 +17,25 @@ and this project adheres to [Semantic Versioning][].
 
 ### Added
 
-* `--beserver-cfg` (`-r`) option and `BERCON_SERVER_CFG` env var to
-  auto-load RConIP, RConPort, and RConPassword from `beserver_x64*.cfg`.
+* RC file support `--config` (`-c`) flag to load INI config with
+  `[globals]` and `[profile.*]` sections.
+* Profile selection `--profile` (`-n`) flag to select a named profile
+  from RC file.
+* Profile listing `--list-profiles` (`-l`) flag to show available
+  profiles in a formatted table.
+* Config discovery auto-detected in platform-specific paths:
+  * Linux and others: `~/.config/bercon-cli/config.ini`, `~/.bercon-cli.ini`
+  * macOS: `~/Library/Application Support/bercon-cli/config.ini`
+  * Windows: `%APPDATA%\bercon-cli\config.ini`
+* `--server-cfg` (`-r`) option to auto-load settings from `beserver_x64*.cfg`.
   Supports both file and directory paths,
   automatically picks active or latest config.
+* `--example` (`-e`) flag to print an example RC file.
+
+### Changed
+
+* CLI now merges configuration in layered order:
+  `CLI > Env > RC file (globals/profile) > beserver_x64*.cfg`.
 
 [0.4.1]: https://github.com/WoozyMasta/bercon-cli/compare/v0.4.0...v0.4.1
 

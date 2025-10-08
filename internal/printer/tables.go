@@ -35,34 +35,20 @@ func baseTable() table.Writer {
 
 func renderPlayersTable(w io.Writer, players beparser.Players, withGeo bool, format Format) error {
 	t := baseTable()
+
+	header := table.Row{"#", "IP", "Port", "Ping", "GUID", "Name", "Valid", "Lobby"}
 	if withGeo {
-		t.AppendHeader(table.Row{"#", "IP:Port", "Ping", "GUID", "Name", "Country", "City", "Lat", "Lon"})
-	} else {
-		t.AppendHeader(table.Row{"#", "IP:Port", "Ping", "GUID", "Name"})
+		header = append(header, "Country", "City", "Lat", "Lon")
 	}
+	t.AppendHeader(header)
 
 	for _, p := range players {
+		row := table.Row{p.ID, p.IP, p.Port, p.Ping, p.GUID, p.Name, p.Valid, p.Lobby}
 		if withGeo {
-			t.AppendRow(table.Row{
-				p.ID,
-				fmt.Sprintf("%s:%d", p.IP, p.Port),
-				p.Ping,
-				p.GUID,
-				p.Name,
-				p.Country,
-				p.City,
-				fmtCoord(p.Latitude),
-				fmtCoord(p.Longitude),
-			})
-		} else {
-			t.AppendRow(table.Row{
-				p.ID,
-				fmt.Sprintf("%s:%d", p.IP, p.Port),
-				p.Ping,
-				p.GUID,
-				p.Name,
-			})
+			row = append(row, p.Country, p.City, fmtCoord(p.Latitude), fmtCoord(p.Longitude))
 		}
+
+		t.AppendRow(row)
 	}
 
 	t.SetTitle("Players on server (%d in total)", len(players))
@@ -73,29 +59,20 @@ func renderPlayersTable(w io.Writer, players beparser.Players, withGeo bool, for
 
 func renderAdminsTable(w io.Writer, admins beparser.Admins, withGeo bool, format Format) error {
 	t := baseTable()
+
+	header := table.Row{"#", "IP", "Port", "Country"}
 	if withGeo {
-		t.AppendHeader(table.Row{"#", "IP:Port", "Country", "City", "Lat", "Lon"})
-	} else {
-		t.AppendHeader(table.Row{"#", "IP:Port", "Country"})
+		header = append(header, "City", "Lat", "Lon")
 	}
+	t.AppendHeader(header)
 
 	for _, a := range admins {
+		row := table.Row{a.ID, a.IP, a.Port, a.Country}
 		if withGeo {
-			t.AppendRow(table.Row{
-				a.ID,
-				fmt.Sprintf("%s:%d", a.IP, a.Port),
-				a.Country,
-				a.City,
-				fmtCoord(a.Latitude),
-				fmtCoord(a.Longitude),
-			})
-		} else {
-			t.AppendRow(table.Row{
-				a.ID,
-				fmt.Sprintf("%s:%d", a.IP, a.Port),
-				a.Country,
-			})
+			row = append(row, a.City, fmtCoord(a.Latitude), fmtCoord(a.Longitude))
 		}
+
+		t.AppendRow(row)
 	}
 
 	t.SetTitle("Connected RCon admins")

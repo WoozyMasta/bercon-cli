@@ -36,6 +36,9 @@ and this project adheres to [Semantic Versioning][].
 
 * CLI now merges configuration in layered order:
   `CLI > Env > RC file (globals/profile) > beserver_x64*.cfg`.
+* Reworked table rendering for Players and Admins:
+  * Split combined `IP:Port` into separate **IP** and **Port** columns.
+  * Added missing **Valid** and **Lobby** columns for consistency.
 
 [0.4.1]: https://github.com/WoozyMasta/bercon-cli/compare/v0.4.0...v0.4.1
 

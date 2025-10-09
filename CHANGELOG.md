@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning][].
 ### Removed
 -->
 
+## [0.4.2][] - 2025-10-09
+
+### Changed
+
+* Fixed configuration priority
+
+[0.4.2]: https://github.com/WoozyMasta/bercon-cli/compare/v0.4.1...v0.4.2
+
 ## [0.4.1][] - 2025-10-08
 
 ### Added

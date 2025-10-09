@@ -19,16 +19,16 @@ import (
 
 // CLI options
 type Options struct {
-	IP       string `short:"i" long:"ip"            description:"Server IPv4 address" default:"127.0.0.1" env:"BERCON_ADDRESS"`
+	IP       string `short:"i" long:"ip"            description:"Server IPv4 address (default: 127.0.0.1)" env:"BERCON_ADDRESS"`
 	Password string `short:"P" long:"password"      description:"Server RCON password" env:"BERCON_PASSWORD"`
 	RCPath   string `short:"c" long:"config"        description:"Path to rc file (INI). If not set, standard locations are used" env:"BERCON_CONFIG"`
 	Profile  string `short:"n" long:"profile"       description:"Profile name from rc file" env:"BERCON_PROFILE"`
 	BeCfg    string `short:"r" long:"server-cfg"    description:"Path to beserver_x64.cfg file or directory to search beserver_x64*.cfg" env:"BERCON_SERVER_CFG"`
 	GeoDB    string `short:"g" long:"geo-db"        description:"Path to Country GeoDB mmdb file" env:"BERCON_GEO_DB"`
-	Format   string `short:"f" long:"format"        description:"Output format" choice:"json" choice:"table" choice:"raw" choice:"md" choice:"html" default:"table" env:"BERCON_FORMAT"`
-	Port     int    `short:"p" long:"port"          description:"Server RCON port" default:"2305" env:"BERCON_PORT"`
-	Timeout  int    `short:"t" long:"timeout"       description:"Deadline and timeout in seconds" default:"3" env:"BERCON_TIMEOUT"`
-	Buffer   uint16 `short:"b" long:"buffer-size"   description:"Buffer size for RCON connection" default:"1024" env:"BERCON_BUFFER_SIZE"`
+	Format   string `short:"f" long:"format"        description:"Output format (default: table)" choice:"json" choice:"table" choice:"raw" choice:"md" choice:"html" env:"BERCON_FORMAT"`
+	Port     int    `short:"p" long:"port"          description:"Server RCON port (default: 2305)" env:"BERCON_PORT"`
+	Timeout  int    `short:"t" long:"timeout"       description:"Deadline and timeout in seconds (default: 3)" env:"BERCON_TIMEOUT"`
+	Buffer   uint16 `short:"b" long:"buffer-size"   description:"Buffer size for RCON connection (default: 1024)" env:"BERCON_BUFFER_SIZE"`
 	JSON     bool   `short:"j" long:"json"          description:"Print result in JSON format (deprecated, use --format=json)" env:"BERCON_JSON_OUTPUT"`
 	ListRC   bool   `short:"l" long:"list-profiles" description:"List profiles from rc file and exit"`
 	Example  bool   `short:"e" long:"example"       description:"Print example rc (INI) config and exit"`
@@ -79,32 +79,32 @@ func main() {
 		fatalf("rc: %v", err)
 	} else if ok {
 		// apply globals/profile into opts (lowest priority vs CLI/env except -r semantics)
-		if rc.Format != "" {
+		if opts.Format == "" && rc.Format != "" {
 			opts.Format = rc.Format
 		}
-		if rc.GeoDB != "" {
+		if opts.GeoDB == "" && rc.GeoDB != "" {
 			opts.GeoDB = rc.GeoDB
 		}
-		if rc.TimeoutSec > 0 {
+		if opts.Timeout == 0 && rc.TimeoutSec > 0 {
 			opts.Timeout = rc.TimeoutSec
 		}
-		if rc.BufferSize > 0 {
+		if opts.Buffer == 0 && rc.BufferSize > 0 {
 			opts.Buffer = rc.BufferSize
 		}
 
 		// connection parameters from rc (will be overridden by -r below if both set)
-		if rc.IP != "" {
+		if opts.IP == "" && rc.IP != "" {
 			opts.IP = rc.IP
 		}
-		if rc.Port != 0 {
+		if opts.Port == 0 && rc.Port != 0 {
 			opts.Port = rc.Port
 		}
-		if rc.Password != "" {
+		if opts.Password == "" && rc.Password != "" {
 			opts.Password = rc.Password
 		}
 
 		// if profile provided server_cfg – treat as BeCfg input
-		if rc.ServerCfg != "" && opts.BeCfg == "" {
+		if opts.BeCfg == "" && rc.ServerCfg != "" {
 			opts.BeCfg = rc.ServerCfg
 		}
 	}
@@ -118,6 +118,23 @@ func main() {
 		opts.IP = rc.IP
 		opts.Port = rc.Port
 		opts.Password = rc.Password
+	}
+
+	// defaults
+	if opts.IP == "" {
+		opts.IP = "127.0.0.1"
+	}
+	if opts.Port == 0 {
+		opts.Port = 2305
+	}
+	if opts.Timeout == 0 {
+		opts.Timeout = 3
+	}
+	if opts.Buffer == 0 {
+		opts.Buffer = 1024
+	}
+	if opts.Format == "" {
+		opts.Format = "table"
 	}
 
 	if opts.Password == "" {

@@ -13,6 +13,19 @@ and this project adheres to [Semantic Versioning][].
 ### Removed
 -->
 
+## [0.4.3][] - 2025-12-10
+
+### Changed
+
+* Fixed issue where `Send()` would block indefinitely if the connection
+  manager loop crashed or became unresponsive.
+* Fixed race conditions when calling `Close()` multiple times.
+* Decoupled message handling into a dedicated `dispatchLoop`.
+* Internal request channels are now buffered to reduce latency
+  during high-load command sending.
+
+[0.4.3]: https://github.com/WoozyMasta/bercon-cli/compare/v0.4.2...v0.4.3
+
 ## [0.4.2][] - 2025-10-09
 
 ### Changed

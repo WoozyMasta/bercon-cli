@@ -37,13 +37,13 @@ func (c *Connection) managerLoop() {
 			switch pkt.kind {
 			case loginPacket:
 				select {
-				case c.Messages <- PacketEvent{Time: time.Now(), Data: pkt.data, Seq: pkt.seq}:
+				case c.msgCh <- pkt:
 				default:
 				}
 
 			case messagePacket:
 				select {
-				case c.Messages <- PacketEvent{Time: time.Now(), Data: pkt.data, Seq: pkt.seq}:
+				case c.msgCh <- pkt:
 				default:
 				}
 
@@ -63,9 +63,8 @@ func (c *Connection) managerLoop() {
 		case <-tk.C:
 			if c.keepalive {
 				// fire-and-forget empty command to keep login alive.
-				if seq, ok := c.tryFindFreeSeq(); ok { // non-blocking attempt
+				if seq, ok := c.tryFindFreeSeq(); ok {
 					_ = c.writePacket(commandPacket, nil, seq)
-					// we don't create inflight — response (if any) will be ignored
 				}
 			}
 		}
@@ -139,9 +138,31 @@ func (c *Connection) handleCommandPacket(pkt *packet) {
 	}
 }
 
+// dispatchLoop handles buffering and sending events to the user
+func (c *Connection) dispatchLoop() {
+	defer c.wg.Done()
+
+	for {
+		select {
+		case <-c.ctx.Done():
+			return
+
+		case pkt := <-c.msgCh:
+			select {
+			case c.Messages <- PacketEvent{Time: time.Now(), Data: pkt.data, Seq: pkt.seq}:
+
+			case <-c.ctx.Done():
+				return
+			}
+		}
+	}
+}
+
 // readerLoop reads UDP, parses packets and forwards to manager.
 func (c *Connection) readerLoop() {
 	defer c.wg.Done()
+	defer c.cancel()
+
 	buf := make([]byte, c.bufferSize)
 
 	for {

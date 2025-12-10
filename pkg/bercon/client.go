@@ -54,7 +54,9 @@ type PacketEvent struct {
 type Connection struct {
 
 	// lifecycle
-	ctx context.Context
+	ctx    context.Context
+	cancel context.CancelFunc
+	close  sync.Once
 
 	// owned by manager loop
 	conn     *net.UDPConn
@@ -62,11 +64,11 @@ type Connection struct {
 	reqCh    chan sendReq // requests from Send()
 	pktCh    chan *packet // parsed packets from reader
 	ackCh    chan byte    // message seq to ack
+	msgCh    chan *packet // internal channel for message dispatch
 
 	// outward events
 	Messages chan PacketEvent
 
-	cancel context.CancelFunc
 	// immutable after Open
 	address  string
 	password string
@@ -86,6 +88,7 @@ type sendReq struct {
 	respCh  chan sendResp
 	command string
 }
+
 type sendResp struct {
 	err  error
 	data []byte
@@ -123,9 +126,10 @@ func Open(addr, pass string) (*Connection, error) {
 		},
 		Messages: make(chan PacketEvent, 32),
 
-		reqCh:    make(chan sendReq),
+		reqCh:    make(chan sendReq, 4),
 		pktCh:    make(chan *packet, 64),
 		ackCh:    make(chan byte, 64),
+		msgCh:    make(chan *packet, 64),
 		inflight: make(map[byte]*inflight, 16),
 	}
 	c.ctx, c.cancel = context.WithCancel(context.Background())
@@ -138,10 +142,11 @@ func Open(addr, pass string) (*Connection, error) {
 
 	atomic.StoreUint32(&c.alive, 1)
 
-	// start reader and manager
-	c.wg.Add(2)
+	// start reader, manager and dispatcher
+	c.wg.Add(3)
 	go c.readerLoop()
 	go c.managerLoop()
+	go c.dispatchLoop()
 
 	return c, nil
 }
@@ -251,18 +256,22 @@ func (c *Connection) Close() error {
 	if !c.IsAlive() {
 		return nil
 	}
-	atomic.StoreUint32(&c.alive, 0)
-	c.cancel()
 
-	// best-effort to unblock reader
-	if c.conn != nil {
-		_ = c.conn.Close()
-	}
+	var err error
+	c.close.Do(func() {
+		atomic.StoreUint32(&c.alive, 0)
+		c.cancel()
 
-	c.wg.Wait()
-	close(c.Messages)
+		// Force close socket for unlock readerLoop
+		if c.conn != nil {
+			err = c.conn.Close()
+		}
 
-	return nil
+		c.wg.Wait()
+		close(c.Messages)
+	})
+
+	return err
 }
 
 // StartKeepAlive begins a routine that sends periodic keepalive packets.
@@ -275,17 +284,26 @@ func (c *Connection) Send(command string) ([]byte, error) {
 	if !c.IsAlive() {
 		return nil, ErrConnectionDown
 	}
+
+	// global timer for operation
+	timer := time.NewTimer(c.timeouts.deadline)
+	defer timer.Stop()
+
 	respCh := make(chan sendResp, 1)
+	req := sendReq{
+		command: command,
+		respCh:  respCh,
+	}
 
 	// push request
 	select {
-	case c.reqCh <- sendReq{
-		command: command,
-		respCh:  respCh,
-	}:
+	case c.reqCh <- req: // succes add to queue
 
 	case <-c.ctx.Done():
 		return nil, ErrConnectionClosed
+
+	case <-timer.C: // if queue overflow or managerLoop stuck
+		return nil, ErrTimeout
 	}
 
 	// wait for response or deadline
@@ -293,10 +311,10 @@ func (c *Connection) Send(command string) ([]byte, error) {
 	case resp := <-respCh:
 		return resp.data, resp.err
 
-	case <-time.After(c.timeouts.deadline):
-		return nil, ErrTimeout
-
 	case <-c.ctx.Done():
 		return nil, ErrConnectionClosed
+
+	case <-timer.C:
+		return nil, ErrTimeout
 	}
 }

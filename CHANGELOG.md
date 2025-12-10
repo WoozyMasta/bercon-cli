@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning][].
 * Decoupled message handling into a dedicated `dispatchLoop`.
 * Internal request channels are now buffered to reduce latency
   during high-load command sending.
+* Improved `IsAlive()` accuracy. It now tracks the last received packet
+  time and detects dropped connections without extra network overhead.
 
 [0.4.3]: https://github.com/WoozyMasta/bercon-cli/compare/v0.4.2...v0.4.3
 

@@ -3,6 +3,7 @@ package bercon
 import (
 	"errors"
 	"net"
+	"sync/atomic"
 	"time"
 )
 
@@ -186,6 +187,9 @@ func (c *Connection) readerLoop() {
 			c.cancel()
 			return
 		}
+
+		// update last activity
+		atomic.StoreInt64(&c.lastActivity, time.Now().UnixNano())
 
 		pkt, err := fromBytes(buf[:n])
 		if err != nil {

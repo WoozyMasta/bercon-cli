@@ -74,10 +74,11 @@ type Connection struct {
 	password string
 
 	// config (atomic enough for our use)
-	timeouts   Timeouts
-	wg         sync.WaitGroup
-	alive      uint32 // 1 if active
-	bufferSize uint16
+	timeouts     Timeouts
+	wg           sync.WaitGroup
+	alive        uint32 // 1 if active
+	lastActivity int64  // atomic unix nano
+	bufferSize   uint16
 
 	sequence  byte
 	keepalive bool
@@ -132,6 +133,9 @@ func Open(addr, pass string) (*Connection, error) {
 		msgCh:    make(chan *packet, 64),
 		inflight: make(map[byte]*inflight, 16),
 	}
+
+	atomic.StoreInt64(&c.lastActivity, time.Now().UnixNano())
+
 	c.ctx, c.cancel = context.WithCancel(context.Background())
 
 	// login synchronously before loops
@@ -248,7 +252,18 @@ func (c *Connection) SetMicroSleepTimeout(milliseconds int) {
 
 // IsAlive checks if the connection is active and not closed.
 func (c *Connection) IsAlive() bool {
-	return atomic.LoadUint32(&c.alive) == 1
+	if atomic.LoadUint32(&c.alive) == 0 {
+		return false
+	}
+
+	last := atomic.LoadInt64(&c.lastActivity)
+	threshold := c.timeouts.keepalive + c.timeouts.deadline + (5 * time.Second)
+
+	if time.Since(time.Unix(0, last)) > threshold {
+		return false
+	}
+
+	return true
 }
 
 // Close gracefully closes the connection, releases resources, and ensures no further operations are performed.

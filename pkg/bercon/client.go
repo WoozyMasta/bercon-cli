@@ -259,11 +259,7 @@ func (c *Connection) IsAlive() bool {
 	last := atomic.LoadInt64(&c.lastActivity)
 	threshold := c.timeouts.keepalive + c.timeouts.deadline + (5 * time.Second)
 
-	if time.Since(time.Unix(0, last)) > threshold {
-		return false
-	}
-
-	return true
+	return time.Since(time.Unix(0, last)) <= threshold
 }
 
 // Close gracefully closes the connection, releases resources, and ensures no further operations are performed.

@@ -56,7 +56,6 @@ type Connection struct {
 	// lifecycle
 	ctx    context.Context
 	cancel context.CancelFunc
-	close  sync.Once
 
 	// owned by manager loop
 	conn     *net.UDPConn
@@ -76,9 +75,11 @@ type Connection struct {
 	// config (atomic enough for our use)
 	timeouts     Timeouts
 	wg           sync.WaitGroup
-	alive        uint32 // 1 if active
-	lastActivity int64  // atomic unix nano
-	bufferSize   uint16
+	lastActivity int64 // atomic unix nano
+	close        sync.Once
+
+	alive      uint32 // 1 if active
+	bufferSize uint16
 
 	sequence  byte
 	keepalive bool

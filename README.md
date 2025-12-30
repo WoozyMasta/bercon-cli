@@ -327,19 +327,7 @@ dayz-all-restart
 dayz-all-restart 360 20
 ```
 
-## Support me 💖
-
-If you enjoy my projects and want to support further development,
-feel free to donate! Every contribution helps to keep the work going.
-Thank you!
-
-### Crypto Donations
-
-<!-- cSpell:disable -->
-* **BTC**: `1Jb6vZAMVLQ9wwkyZfx2XgL5cjPfJ8UU3c`
-* **USDT (TRC20)**: `TN99xawQTZKraRyvPAwMT4UfoS57hdH8Kz`
-* **TON**: `UQBB5D7cL5EW3rHM_44rur9RDMz_fvg222R4dFiCAzBO_ptH`
-<!-- cSpell:enable -->
+## 👉 [Support Me](https://gist.github.com/WoozyMasta/7b0cabb538236b7307002c1fbc2d94ea)
 
 Your support is greatly appreciated!
 

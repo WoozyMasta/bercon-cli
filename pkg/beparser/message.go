@@ -17,7 +17,12 @@ func NewMessage() *Messages {
 // replies with an empty line for successful actions; in that case "OK"
 // is used as a single line placeholder.
 func (m *Messages) Parse(data []byte) {
+	*m = Messages{Msg: []string{}}
+
 	lines := strings.Split(string(data), "\n")
+	if len(lines) == 0 {
+		return
+	}
 
 	if len(lines) < 2 && len(lines[0]) == 0 {
 		*m = Messages{Msg: []string{"OK"}}

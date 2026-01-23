@@ -66,58 +66,93 @@ func loadGeoOrSkip(t *testing.T) *geoip2.Reader {
 	return nil
 }
 
-// TestParsePlayers tests the ParsePlayers function.
-func TestParsePlayers(t *testing.T) {
-	input, err := loadTestData("players.txt")
-	if err != nil {
-		t.Fatalf("Failed to load players test data: %v", err)
+func TestPlayersParse_PartialFields(t *testing.T) {
+	cases := []struct {
+		name string
+		line string
+		want Player
+	}{
+		{
+			name: "ok+lobby",
+			line: "0  127.0.0.1:4444      1      48032258807176771690632755883357(OK) Player (Lobby)",
+			want: Player{
+				ID: 0, IP: "127.0.0.1", Port: 4444, Ping: 1,
+				GUID:  "48032258807176771690632755883357",
+				Valid: true, Name: "Player", Lobby: true,
+			},
+		},
+		{
+			name: "no-ok",
+			line: "1  8.8.8.8:65263       560    48032258807176771690632755883357 Nagibator 3000",
+			want: Player{
+				ID: 1, IP: "8.8.8.8", Port: 65263, Ping: 560,
+				GUID:  "48032258807176771690632755883357",
+				Valid: false, Name: "Nagibator 3000", Lobby: false,
+			},
+		},
+		{
+			name: "missing-ip-placeholder",
+			// use "-" to keep token position; parseAddress("-") => invalid,0
+			line: "2  -                 10     48032258807176771690632755883357(OK) Name",
+			want: Player{
+				ID: 2, IP: "invalid", Port: 0, Ping: 10,
+				GUID:  "48032258807176771690632755883357",
+				Valid: true, Name: "Name", Lobby: false,
+			},
+		},
+		{
+			name: "missing-ping-placeholder",
+			// use "-" to keep token position; ParseUint("-") fails => default 0
+			line: "3  8.8.8.8:1          -      48032258807176771690632755883357(OK) Name",
+			want: Player{
+				ID: 3, IP: "8.8.8.8", Port: 1, Ping: 0,
+				GUID:  "48032258807176771690632755883357",
+				Valid: true, Name: "Name", Lobby: false,
+			},
+		},
+		{
+			name: "lobby-without-space",
+			line: "4  8.8.8.8:1      10   48032258807176771690632755883357(OK) John(Lobby)",
+			want: Player{
+				ID: 4, IP: "8.8.8.8", Port: 1, Ping: 10,
+				GUID:  "48032258807176771690632755883357",
+				Valid: true, Name: "John", Lobby: true,
+			},
+		},
 	}
 
-	players := Players{}
-	players.Parse(input)
-
-	if len(players) != 3 {
-		t.Errorf("Expected 1 player, got '%d'", len(players))
+	wrap := func(line string) []byte {
+		return []byte(
+			"Players on server:\n" +
+				"[#] [IP Address]:[Port] [Ping] [GUID] [Name]\n" +
+				"--------------------------------------------------\n" +
+				line + "\n" +
+				"(1 players in total)\n",
+		)
 	}
 
-	if players[0].ID != 0 {
-		t.Errorf("Expected for 1 player ID 0, but '%d'", players[0].ID)
-	}
-	if players[2].ID != 2 {
-		t.Errorf("Expected for 3 player ID 0, but '%d'", players[2].ID)
-	}
-	if players[0].IP != "127.0.0.1" {
-		t.Errorf("Expected for 1 player ip 127.0.0.1, but '%s'", players[0].IP)
-	}
-	if players[1].Port != 65263 {
-		t.Errorf("Expected for 2 player port 65263, but '%d'", players[0].Port)
-	}
-	if players[1].Ping != 560 {
-		t.Errorf("Expected for 2 player ping 560, but '%d'", players[0].Ping)
-	}
-	if players[0].GUID != "48032258807176771690632755883357" {
-		t.Errorf("Unexpected guid for 1 player: '%s'", players[0].GUID)
-	}
-	if !players[0].Valid {
-		t.Errorf("Expected for 1 player valid GUID, but '%t'", players[0].Valid)
-	}
-	if !players[0].Valid || players[1].Valid || players[2].Valid {
-		t.Errorf("Expected for 2 and 3 player invalid GUID, but '%t' and '%t'", players[1].Valid, players[2].Valid)
-	}
-	if players[0].Name != "Player" {
-		t.Errorf("Expected player name to be 'Player', got '%s'", players[0].Name)
-	}
-	if !players[0].Lobby {
-		t.Errorf("Expected for 1 player in Lobby but '%t'", players[0].Lobby)
-	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var players Players
+			players.Parse(wrap(tc.line))
 
-	geoDB := loadGeoOrSkip(t)
-	players.SetGeo(geoDB)
-	if players[1].Country != "US" {
-		t.Errorf("Expected for 1 player 'US' country but got '%s'", players[1].Country)
-	}
+			if len(players) != 1 {
+				t.Fatalf("expected 1 player, got %d", len(players))
+			}
 
-	printJSON("Players", players)
+			got := players[0]
+			if got.ID != tc.want.ID ||
+				got.IP != tc.want.IP ||
+				got.Port != tc.want.Port ||
+				got.Ping != tc.want.Ping ||
+				got.GUID != tc.want.GUID ||
+				got.Valid != tc.want.Valid ||
+				got.Name != tc.want.Name ||
+				got.Lobby != tc.want.Lobby {
+				t.Fatalf("got=%+v want=%+v", got, tc.want)
+			}
+		})
+	}
 }
 
 // TestParseAdmins tests the ParseAdmins function.

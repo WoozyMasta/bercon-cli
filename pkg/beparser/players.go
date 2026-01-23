@@ -3,6 +3,8 @@ package beparser
 import (
 	"strconv"
 	"strings"
+
+	"github.com/woozymasta/dzid"
 )
 
 // Player represents a single player entry parsed from the "Players on server:"
@@ -50,12 +52,18 @@ func NewPlayers() *Players {
 // Parse fills the Players slice from the plaintext BattlEye response
 // of the "players" command.
 func (p *Players) Parse(data []byte) {
+	*p = (*p)[:0]
+
 	lines := strings.Split(string(data), "\n")
+	if len(lines) == 0 {
+		return
+	}
 
 	for i := 0; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])
 
-		if strings.Contains(line, playersTotal) {
+		// Catch footer
+		if isPlayersFooter(line) {
 			break
 		}
 
@@ -73,12 +81,35 @@ func (p *Players) Parse(data []byte) {
 			continue
 		}
 
-		id, err := strconv.ParseUint(parts[playersColID], 10, 8)
+		// ID must be the first token, otherwise it's garbage line
+		id64, err := strconv.ParseUint(parts[playersColID], 10, 8)
 		if err != nil {
-			if len(*p) > 255 {
-				id = 255
-			} else {
-				id = uint64(len(*p))
+			continue
+		}
+
+		guid := defaultInvalidGUID
+		beOK := false
+		guidIdx := -1
+
+		for k := 1; k < len(parts); k++ {
+			tok := parts[k]
+			ok := false
+
+			if strings.HasSuffix(tok, playerOK) {
+				ok = true
+				tok = strings.TrimSuffix(tok, playerOK)
+			}
+
+			if len(tok) < hashBytesGUID {
+				continue
+			}
+
+			candidate := dzid.NormalizeBattlEye(tok[:hashBytesGUID])
+			if dzid.IsBattlEye(candidate) && candidate != defaultInvalidGUID {
+				guidIdx = k
+				guid = candidate
+				beOK = ok
+				break
 			}
 		}
 
@@ -89,35 +120,59 @@ func (p *Players) Parse(data []byte) {
 			ping = defaultPing
 		}
 
-		var guid string
-		var valid bool
-		if len(parts[playersColGUID]) >= hashBytesGUID {
-			guid = strings.TrimSpace(parts[playersColGUID][:hashBytesGUID])
-			valid = parts[playersColGUID][hashBytesGUID:] == playerOK
+		var name string
+		if guidIdx != -1 && guidIdx+1 < len(parts) {
+			name = strings.Join(parts[guidIdx+1:], " ") // Best case
+		} else if len(parts) >= playersColName+1 {
+			name = strings.Join(parts[playersColName:], " ") // Fallback
 		} else {
-			guid = defaultInvalidGUID
+			name = parts[len(parts)-1] // Last resort
 		}
+		name = strings.TrimSpace(name)
 
-		name := strings.Join(parts[playersColName:], " ")
-		var inLobby bool
-		if len(name) > len(playerLobby) {
-			inLobby = name[len(name)-len(playerLobby):] == playerLobby
-			if inLobby {
-				name = name[:len(name)-len(playerLobby)]
-			}
+		inLobby := false
+		if strings.HasSuffix(name, playerLobby) {
+			inLobby = true
+			name = strings.TrimSpace(strings.TrimSuffix(name, playerLobby))
+		} else if strings.HasSuffix(name, "(Lobby)") {
+			inLobby = true
+			name = strings.TrimSpace(strings.TrimSuffix(name, "(Lobby)"))
 		}
 
 		player := Player{
-			ID:    byte(id),
+			ID:    byte(id64),
 			IP:    ip,
 			Port:  port,
-			Ping:  uint16(ping), // #nosec G115
+			Ping:  uint16(ping),
 			GUID:  guid,
-			Valid: valid,
-			Name:  strings.TrimSpace(name),
+			Valid: beOK,
+			Name:  name,
 			Lobby: inLobby,
 		}
 
 		*p = append(*p, player)
 	}
+}
+
+func isPlayersFooter(line string) bool {
+	line = strings.TrimSpace(line)
+
+	if len(line) < 3 {
+		return false
+	}
+
+	if line[0] != '(' || line[len(line)-1] != ')' {
+		return false
+	}
+
+	if !strings.Contains(line, playersTotal) {
+		return false
+	}
+
+	j := 1
+	for j < len(line) && line[j] >= '0' && line[j] <= '9' {
+		j++
+	}
+
+	return j > 1 && j < len(line) && line[j] == ' '
 }

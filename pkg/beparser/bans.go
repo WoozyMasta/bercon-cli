@@ -60,7 +60,12 @@ func NewBans() *Bans {
 // Parse populates the Bans struct (GUID and IP sections) from the plaintext
 // BattlEye response of the "bans" command.
 func (b *Bans) Parse(data []byte) {
+	*b = Bans{}
+
 	lines := strings.Split(string(data), "\n")
+	if len(lines) == 0 {
+		return
+	}
 
 	for i := 0; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])
@@ -89,6 +94,12 @@ func NewBansGUID() *BansGUID {
 
 // Parse fills the BansGUID slice from the GUID bans section of the response.
 func (b *BansGUID) Parse(lines []string) {
+	*b = BansGUID{}
+
+	if len(lines) == 0 {
+		return
+	}
+
 	for i := 0; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])
 
@@ -144,6 +155,12 @@ func NewBansIP() *BansIP {
 // Parse fills the BansIP slice from the IP bans section of the response.
 // guidCount is used to keep IDs contiguous across GUID and IP sections.
 func (b *BansIP) Parse(lines []string, guidCount int) {
+	*b = BansIP{}
+
+	if len(lines) == 0 {
+		return
+	}
+
 	for i := 0; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])
 

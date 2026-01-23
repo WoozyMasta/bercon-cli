@@ -20,12 +20,10 @@ jobs:
       - name: Run base workflow
         uses: ./.github/actions/base
         with:
-          go-version: '1.24.2'
+          go-version: '1.25.5'
 
       - name: Build
         run: make release
-        env:
-          GOWORK: off
 
       - name: Extract changelog
         id: changelog

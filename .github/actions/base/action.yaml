@@ -9,46 +9,20 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ inputs.go-version }}
-        check-latest: true
-        cache: false
-
-    - name: Cache Go build & mod
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ inputs.go-version }}-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-${{ inputs.go-version }}-
-          ${{ runner.os }}-go-
-
-    - name: Cache golangci-lint cache
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/golangci-lint
-        key: ${{ runner.os }}-golangci-${{ inputs.go-version }}-${{ hashFiles('**/*.go') }}
-        restore-keys: |
-          ${{ runner.os }}-golangci-${{ inputs.go-version }}-
-          ${{ runner.os }}-golangci-
-
     - name: Run MarkdownLint
       uses: DavidAnson/markdownlint-cli2-action@v18
       with:
         globs: "**/*.md"
 
-    - name: Install dev tools (make tools)
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ inputs.go-version }}
+
+    - name: Install dependencies
       shell: bash
       run: make tools
-      env:
-        GOWORK: off
 
-    - name: Run checks (make check)
+    - name: Check
       shell: bash
       run: make check
-      env:
-        GOWORK: off

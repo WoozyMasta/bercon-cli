@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/go-ini/ini"
+	"gopkg.in/ini.v1"
 )
 
 // RC holds effective runtime options from rc/config.

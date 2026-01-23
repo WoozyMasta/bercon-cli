@@ -29,7 +29,7 @@ jobs:
 
       - name: Extract changelog
         id: changelog
-        run: awk -f ./release_notes.awk ./CHANGELOG.md > release.md
+        run: make release-notes > release.md
 
       - name: Create GitHub release
         uses: ncipollo/release-action@v1

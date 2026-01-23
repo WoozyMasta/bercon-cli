@@ -1,8 +1,8 @@
-# ------------------------------- Settings ----------------------------------
+# Settings
 RELEASE_MATRIX := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64
 
 CGO_ENABLED ?= 0
-GOFLAGS     ?= -buildvcs=false -trimpath
+GOFLAGS     ?= -buildvcs=auto -trimpath
 LDFLAGS     ?= -s -w
 GOWORK      ?= off
 GOFTAGS     ?= forceposix
@@ -28,7 +28,7 @@ ifeq ($(RACE),1)
 	EXTRA_BUILD_FLAGS := -race
 endif
 
-# ----------------------------- Build metadata ------------------------------
+# Build metadata
 MODULE  := $(shell go list -m)
 VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null || echo 0.0.0)
 COMMIT  := $(shell git rev-parse HEAD 2>/dev/null || echo unknown)
@@ -41,9 +41,8 @@ LDFLAGS_X := \
 	-X '$(MODULE)/internal/vars._buildTime=$(DATE)' \
 	-X '$(MODULE)/internal/vars.URL=$(URL)'
 
-# ---------------------------------------------------------------------------
 .PHONY: all help build release clean tidy download fmt verify vet tools lint align align-fix \
-        sbom sbom-app sbom-bin _winres_patch _build_one _sbom_bin_one geodb
+        test sbom sbom-app sbom-bin _winres_patch _build_one _sbom_bin_one geodb
 
 all: tools check release
 
@@ -59,12 +58,11 @@ help:
 	@echo "Vars:"
 	@echo "  BINARY, PKG, RELEASE_MATRIX, RACE=1"
 
-check: download tidy verify vet fmt lint align
+check: download tidy verify vet fmt lint align test
 
 clean:
 	rm -rf $(OUTPUT_DIR)
 
-# ------------------------------- Build -------------------------------------
 build: clean
 	@mkdir -p $(OUTPUT_DIR)
 	@echo ">> building native: $(BINARY)$(NATIVE_EXTENSION)"
@@ -92,7 +90,6 @@ release: clean
 	done
 	@$(MAKE) sbom-app
 
-# ------------------------------- SBOM ---------------------------------------
 sbom: sbom-app sbom-bin
 
 # App-level SBOM (sources/deps)
@@ -116,7 +113,6 @@ _sbom_bin_one:
 		$(CYCLO) bin -json -output "$$bin.sbom.json" "$$bin"; \
 	fi
 
-# ------------------------------ Win resources -------------------------------
 # Patches Windows resources if GOOS=windows and winres/winres.json exists
 _winres_patch:
 	@if [ "$(GOOS)" = "windows" ] && [ -f "winres/winres.json" ]; then \
@@ -125,7 +121,6 @@ _winres_patch:
 			"$(OUTPUT_DIR)/$(BIN)$(OUTEXT)"; \
 	fi
 
-# ------------------------------ Housekeeping --------------------------------
 tidy:
 	$(GO) mod tidy
 
@@ -160,7 +155,17 @@ align:
 align-fix:
 	$(ALIGNER) -apply ./...
 
-# ------------------------------- GeoDB -------------------------------------
+test:
+	$(GO) test ./...
+
+test-integration:
+	$(GO) test -tags=integration ./...
+
+release-notes:
+	@awk '\
+	/^<!--/,/^-->/ { next } \
+	/^## \[[0-9]+\.[0-9]+\.[0-9]+\]/ { if (found) exit; found=1; next } found { print } \
+	' CHANGELOG.md
 
 geodb:
 	@echo ">>> downloading GeoLite2-City.mmdb"

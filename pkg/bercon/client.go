@@ -30,16 +30,24 @@ const (
 	// DefaultBufferHeaderSize accounts for fixed packet overhead.
 	DefaultBufferHeaderSize = 16
 
+	// DefaultLoginAttempts is the number of login attempts.
+	DefaultLoginAttempts = 1
+
 	// MaxCommandBodySize is the protocol limit for a single client command body.
 	// The client never sends multipart commands.
 	MaxCommandBodySize = 1391
+
+	// MaxKeepaliveTimeout is the maximum keepalive interval in seconds.
+	// BattlEye tends to drop idle sessions above this value.
+	MaxKeepaliveTimeout = 45
 )
 
 // Timeouts defines various timeout configurations for the connection.
 type Timeouts struct {
-	keepalive  time.Duration // interval for sending keepalive packets
-	deadline   time.Duration // maximum time to wait for a response
-	microSleep time.Duration // sleep duration during busy-wait loops
+	keepalive     time.Duration // interval for sending keepalive packets
+	deadline      time.Duration // maximum time to wait for a response
+	microSleep    time.Duration // sleep duration during busy-wait loops
+	loginAttempts int           // number of login retries
 }
 
 // PacketEvent is a struct for broadcasting incoming packets (like login or messages)
@@ -122,9 +130,10 @@ func Open(addr, pass string) (*Connection, error) {
 		conn:       rawConn,
 		bufferSize: DefaultBufferSize + DefaultBufferHeaderSize,
 		timeouts: Timeouts{
-			keepalive:  DefaultKeepaliveTimeout * time.Second,
-			deadline:   DefaultDeadlineTimeout * time.Second,
-			microSleep: DefaultMicroSleepTimeout * time.Millisecond,
+			keepalive:     DefaultKeepaliveTimeout * time.Second,
+			deadline:      DefaultDeadlineTimeout * time.Second,
+			microSleep:    DefaultMicroSleepTimeout * time.Millisecond,
+			loginAttempts: DefaultLoginAttempts,
 		},
 		Messages: make(chan PacketEvent, 32),
 
@@ -180,7 +189,7 @@ func (c *Connection) SetKeepalive(d time.Duration) {
 	case d <= 0:
 		c.timeouts.keepalive = DefaultKeepaliveTimeout * time.Second
 
-	case d >= 45*time.Second:
+	case d >= MaxKeepaliveTimeout*time.Second:
 		c.timeouts.keepalive = DefaultKeepaliveTimeout * time.Second
 
 	default:
@@ -191,7 +200,7 @@ func (c *Connection) SetKeepalive(d time.Duration) {
 // SetKeepaliveTimeout configures how often (in seconds) keepalive packets are sent to maintain the connection.
 // If seconds >= 45, it resets to the default because the server typically disconnects if the interval is too long.
 func (c *Connection) SetKeepaliveTimeout(seconds int) {
-	if seconds >= 45 || seconds <= 0 {
+	if seconds >= MaxKeepaliveTimeout || seconds <= 0 {
 		c.timeouts.keepalive = DefaultKeepaliveTimeout * time.Second
 		return
 	}
@@ -217,7 +226,20 @@ func (c *Connection) SetDeadline(d time.Duration) {
 
 // SetDeadlineTimeout sets the max time (in seconds) to wait for a server response.
 func (c *Connection) SetDeadlineTimeout(seconds int) {
+	if seconds <= 0 {
+		seconds = DefaultDeadlineTimeout
+	}
+
 	c.timeouts.deadline = time.Duration(seconds) * time.Second
+}
+
+// SetLoginAttempts sets the number of login attempts.
+func (c *Connection) SetLoginAttempts(attempts int) {
+	if attempts < 1 {
+		attempts = DefaultLoginAttempts
+	}
+
+	c.timeouts.loginAttempts = attempts
 }
 
 // MicroSleep returns the current micro-sleep interval used in the tight loop

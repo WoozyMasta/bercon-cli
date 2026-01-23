@@ -8,6 +8,9 @@ var (
 	// ErrTimeout is returned when a request exceeded its deadline.
 	ErrTimeout = errors.New("deadline timeout reached")
 
+	// ErrLoginTimeout is returned when login request exceeded its deadline.
+	ErrLoginTimeout = errors.New("login deadline timeout reached")
+
 	// ErrBufferFull is returned when the send command queue is full.
 	ErrBufferFull = errors.New("send command queue is full, try again later")
 

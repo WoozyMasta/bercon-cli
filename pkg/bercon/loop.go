@@ -217,29 +217,50 @@ func (c *Connection) loginOnce() error {
 		return err
 	}
 
-	if _, err := c.conn.Write(raw); err != nil {
-		return err
-	}
-	_ = c.conn.SetReadDeadline(time.Now().Add(c.timeouts.deadline))
-
 	buf := make([]byte, c.bufferSize)
-	n, err := c.conn.Read(buf)
-	if err != nil {
-		return err
+	step := max(c.timeouts.deadline/time.Duration(c.timeouts.loginAttempts), 1*time.Second)
+	globalDeadline := time.Now().Add(c.timeouts.deadline)
+
+	for range c.timeouts.loginAttempts {
+		now := time.Now()
+		if now.After(globalDeadline) {
+			return ErrLoginTimeout
+		}
+
+		if _, err := c.conn.Write(raw); err != nil {
+			return err
+		}
+
+		readDeadline := now.Add(step)
+		if readDeadline.After(globalDeadline) {
+			readDeadline = globalDeadline
+		}
+
+		_ = c.conn.SetReadDeadline(readDeadline)
+		n, err := c.conn.Read(buf)
+		if err != nil {
+			if ne, ok := err.(net.Error); ok && ne.Timeout() {
+				time.Sleep(c.timeouts.microSleep)
+				continue
+			}
+
+			return err
+		}
+
+		resp, err := fromBytes(buf[:n])
+		if err != nil || resp.kind != loginPacket {
+			continue
+		}
+
+		if len(resp.data) == 0 || resp.data[0] != loginSuccess {
+			return ErrLoginFailed
+		}
+
+		_ = c.conn.SetReadDeadline(time.Time{})
+		return nil
 	}
 
-	resp, err := fromBytes(buf[:n])
-	if err != nil || resp.kind != loginPacket {
-		return ErrNotResponse
-	}
-
-	if len(resp.data) == 0 || resp.data[0] != loginSuccess {
-		return ErrLoginFailed
-	}
-
-	_ = c.conn.SetReadDeadline(time.Time{})
-
-	return nil
+	return ErrLoginTimeout
 }
 
 // writePacket constructs and sends a packet of the specified type, data and sequence to the server.
@@ -267,6 +288,9 @@ func (c *Connection) writePacket(kind packetKind, data []byte, seq byte) error {
 	}
 
 	_, err = c.conn.Write(raw)
+	if err == nil {
+		atomic.StoreInt64(&c.lastActivity, time.Now().UnixNano())
+	}
 
 	return err
 }

@@ -13,6 +13,25 @@ and this project adheres to [Semantic Versioning][].
 ### Removed
 -->
 
+## [0.4.4][] - 2026-01-23
+
+### Added
+
+* CLI: Command repetition and pacing options
+  `--repeat`, `--cmd-sleep`, `--loop-sleep`, `--keepalive`
+* bercon: login timeout retry via multiple attempts
+  (default: 1; configurable via `SetLoginAttempts()` or `--attempts`)
+
+### Changed
+
+* bercon: keepalive timer resets on activity; no extra packets after writes
+* beparser: player parsing has become more rigorous
+* beparser: data is no longer duplicated when parsing again
+* beparser: player named "players in total" no longer terminates
+  processing prematurely
+
+[0.4.4]: https://github.com/WoozyMasta/bercon-cli/compare/v0.4.3...v0.4.4
+
 ## [0.4.3][] - 2025-12-10
 
 ### Changed

@@ -18,8 +18,9 @@ import (
 	"github.com/woozymasta/bercon-cli/pkg/bercon"
 )
 
-// betteralign:ignore
 type ConnectionOptions struct {
+	// betteralign:ignore
+
 	IP            string `short:"i" long:"ip"          env:"ADDRESS"     default:"127.0.0.1"  description:"Server IPv4 address"`
 	Port          int    `short:"p" long:"port"        env:"PORT"        default:"2305"       description:"Server RCON port"`
 	Password      string `short:"P" long:"password"    env:"PASSWORD"                         description:"Server RCON password"`
@@ -36,20 +37,17 @@ type RepeatOptions struct {
 	RepeatCount int `short:"x" long:"repeat"     env:"REPEAT"      default:"1"          description:"Repeat command N times (-1 for infinite)"`
 }
 
-// betteralign:ignore
 type ResourceOptions struct {
 	RCPath string `short:"c" long:"config"  env:"CONFIG"  description:"Path to rc file (INI). If not set, standard locations are used"`
 	BeCfg  string `short:"r" long:"server-cfg" env:"SERVER_CFG" description:"Path to beserver_x64.cfg file or directory to search"`
 	GeoDB  string `short:"g" long:"geo-db"     env:"GEO_DB"     description:"Path to Country GeoDB mmdb file"`
 }
 
-// betteralign:ignore
 type OutputOptions struct {
 	Format string `short:"f" long:"format" env:"FORMAT" default:"table" choice:"json" choice:"table" choice:"raw" choice:"md" choice:"html" description:"Output format"`
 	JSON   bool   `short:"j" long:"json"   env:"JSON"   description:"Print result in JSON format (deprecated, use --format=json)"`
 }
 
-// betteralign:ignore
 type UtilityOptions struct {
 	ListRC  bool `short:"l" long:"list-profiles" description:"List profiles from rc file and exit"`
 	Example bool `short:"e" long:"example"       description:"Print example rc (INI) config and exit"`
@@ -60,8 +58,9 @@ type InfoOptions struct {
 	Help    bool `short:"h" long:"help"    description:"Show this help message"`
 }
 
-// betteralign:ignore
 type Options struct {
+	// betteralign:ignore
+
 	Conn      ConnectionOptions `group:"Connection Settings" env-namespace:"BERCON"`
 	Repeat    RepeatOptions     `group:"Repeat Settings" env-namespace:"BERCON"`
 	Resources ResourceOptions   `group:"File Resources" env-namespace:"BERCON"`

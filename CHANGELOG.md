@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD024 -->
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -12,6 +13,41 @@ and this project adheres to [Semantic Versioning][].
 ### Changed
 ### Removed
 -->
+
+## Unreleased
+
+### Added
+
+* Arma Reforger support.
+* `exec` command as an alias for running commands at the root.
+* `watch` command to continuously display messages received from the server
+* `shell` command for an interactive RCon session:
+  enter commands and see their responses.
+* CSV output with `--format=csv` and commas as the field separator.
+* `.env` file support; set its path with `--env-file`.
+* GeoIP database download and update from a configured URL with `--geo-db-url`.
+* CLI localization in 11 languages:
+  Chinese, Czech, English, French, German,
+  Italian, Japanese, Korean, Russian, Spanish, and Ukrainian.
+* `completion` command for shell completion and `docs` command
+  for generating CLI documentation.
+
+### Changed
+
+* Selected profiles and BattlEye config now override environment values;
+  explicit CLI flags override both.
+* Timing options accept Go duration suffixes while bare numbers keep their
+  previous units; for example, `--cmd-sleep 1` remains one millisecond.
+
+### Removed
+
+* Removed the deprecated root `--json` option;
+  use `--format=json` (`version --json` remains available).
+* **Breaking:**
+  removed the old public APIs from `pkg/bercon` and `pkg/beparser`;
+  those import paths now provide migration notices only.
+  Use [github.com/woozymasta/bercon](https://github.com/woozymasta/bercon).
+  Applications that need the old APIs can stay on `v0.4.4`.
 
 ## [0.4.4][] - 2026-01-23
 

@@ -1,0 +1,80 @@
+site_name: bercon-cli
+site_description: >-
+  Command-line client for game servers using BattlEye RCON, with response
+  parsers for DayZ, Arma 2, Arma 3, and Arma Reforger.
+repo_name: WoozyMasta/bercon-cli
+repo_url: https://github.com/WoozyMasta/bercon-cli
+edit_uri: edit/master/
+
+copyright: Copyright &copy; 2024-2026 WoozyMasta
+
+extra:
+  generator: false
+
+theme:
+  name: material
+  logo: winres/icon64.png
+  favicon: winres/icon32.png
+  features:
+    - content.code.copy
+    - content.tabs.link
+    - toc.integrate
+    - navigation.top
+    - navigation.indexes
+    - navigation.path
+    - navigation.sections
+    - navigation.expand
+    - navigation.footer
+    - search.highlight
+    - search.suggest
+
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: orange
+      accent: amber
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: orange
+      accent: amber
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+  font:
+    text: Roboto
+    code: JetBrains Mono
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+plugins:
+  - search
+  - minify
+
+extra_javascript:
+  - gfm-alerts.js
+
+nav:
+  - Home: README.md
+  - CLI: CLI.md
+  - Release notes: CHANGELOG.md

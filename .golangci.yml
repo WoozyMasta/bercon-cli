@@ -1,30 +1,57 @@
 version: "2"
 run:
   tests: false
+
 linters:
   enable:
+    - modernize
+    - prealloc
+    - perfsprint
+    - asciicheck
+    - bidichk
+    - decorder
+    - dupl
+    - gocritic
     - bodyclose
     - gosec
     - nilerr
     - predeclared
     - revive
     - rowserrcheck
-    - sqlclosecheck
     - tparallel
     - unconvert
     - unparam
     - whitespace
+    - staticcheck
+    - goheader
+
   exclusions:
     generated: lax
     presets:
       - common-false-positives
+    rules:
+      - path: internal/
+        linters:
+          - revive
+      - path: cmd/
+        linters:
+          - revive
     paths:
       - third_party$
       - builtin$
       - examples$
+
+  settings:
+    goheader:
+      template: |-
+        SPDX-License-Identifier: MIT
+        Copyright (c) 2024-2026 WoozyMasta
+        Source: github.com/woozymasta/bercon-cli
+
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
+
 formatters:
   enable:
     - goimports

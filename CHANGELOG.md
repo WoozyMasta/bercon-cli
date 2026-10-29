@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning][].
 ### Removed
 -->
 
-## Unreleased
+## [0.5.0][] - 2026-10-29
 
 ### Added
 
@@ -48,6 +48,8 @@ and this project adheres to [Semantic Versioning][].
   those import paths now provide migration notices only.
   Use [github.com/woozymasta/bercon](https://github.com/woozymasta/bercon).
   Applications that need the old APIs can stay on `v0.4.4`.
+
+[0.5.0]: https://github.com/WoozyMasta/bercon-cli/compare/v0.4.4...v0.5.0
 
 ## [0.4.4][] - 2026-01-23
 

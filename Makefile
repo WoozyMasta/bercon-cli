@@ -161,14 +161,7 @@ align-fix:
 .PHONY: generate-docs generate-check
 
 generate-docs:
-	@tmp=$$(mktemp); trap 'rm -f "$$tmp"' EXIT; \
-	env -u BERCON_ADDRESS -u BERCON_PASSWORD -u BERCON_PORT \
-		-u BERCON_TIMEOUT -u BERCON_ATTEMPTS -u BERCON_KEEPALIVE \
-		-u BERCON_PROFILE -u BERCON_CONFIG \
-		-u BERCON_GEO_DB -u BERCON_GEO_DB_URL -u BERCON_GEO_DB_URL_AUTH \
-		-u BERCON_REPEAT -u BERCON_SLEEP_CMD -u BERCON_SLEEP_LOOP \
-		-u BERCON_BUFFER_SIZE -u BERCON_FORMAT \
-		LANG=en $(GO) run ./cmd/$(BINARY) --no-env --config "$$tmp" docs md \
+	LANG=en $(GO) run ./cmd/$(BINARY) --no-env docs md \
 		--program-name $(BINARY) --style posix --template table CLI.md
 
 generate-check: generate-docs
